@@ -1,0 +1,23 @@
+
+
+at the begining good to install from x64 native build command with administtrative privilige ...
+
+pip3 install torch==1.10.2+cu113 torchvision==0.11.3+cu113 torchaudio===0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html"
+pip3 install -q "monai-weekly[nibabel, skimage, pillow, tensorboard, gdown, ignite, torchvision, itk, tqdm, lmdb, psutil,  openslide, pandas, einops, transformers, mlflow, matplotlib, tensorboardX, tifffile, imagecodecs]"
+pip install ninja
+
+
+*********** running 
+better to run visual studio in administrative mode
+in case of problems good to delete cache - the compiler at the begining tell where it stores it for example 
+	C:\Users\jakub\AppData\Local\torch_extensions\torch_extensions\Cache
+
+it is better for some reason to run jit commands from python inside visual studio not powershell
+
+
+
+
+
+// python C:\Users\jakub\source\repos\extension-cpp\setup.py install
+// python C:\Users\jakub\source\repos\extension-cpp\jit.py
+
