@@ -30,7 +30,13 @@
 		// "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
 		// "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
 	},
-
+	"runArgs": [
+		"--init", "--gpus", "all"
+        ,"--ipc", "host",
+        "--net", "host", 
+        "-e", "DISPLAY=${env:DISPLAY}",
+        "-v", "/tmp/.X11-unix:/tmp/.X11-unix"
+	],
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"ms-python.python"
@@ -52,3 +58,5 @@
 		//"jupyterlab": "latest"
 	}
 }
+
+
