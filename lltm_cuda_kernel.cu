@@ -192,6 +192,10 @@ struct ForBoolKernelArgs {
     torch::Tensor resultListPointerMetaTensor;
 
 
+    torch::Tensor resGold;
+    torch::Tensor resSegm;
+
+
     uint32_t* origArrsPointer;
     uint32_t* mainArrAPointer;
     uint32_t* mainArrBPointer;
@@ -1042,6 +1046,10 @@ inline int allocateMemoryAfterBoolKernel(ForBoolKernelArgs<ZZR>& gpuArgs, ForFul
 
         auto resultListPointerIterNumbTensor = torch::empty((fpPlusFn + 50), options);
         gpuArgs.resultListPointerIterNumbTensor = resultListPointerIterNumbTensor;
+
+
+
+
     }
     if (res3DNeeded) {
         auto options =
@@ -1054,6 +1062,20 @@ inline int allocateMemoryAfterBoolKernel(ForBoolKernelArgs<ZZR>& gpuArgs, ForFul
         auto resultListPointerMetaTensor = torch::empty((fpPlusFn + 50), options);
         gpuArgs.resultListPointerLocalTensor = resultListPointerLocalTensor;
         gpuArgs.resultListPointerMetaTensor = resultListPointerMetaTensor;
+
+        int totalLength= gpuArgs.Nx*gpuArgs.Ny*gpuArgs.Nz;
+        
+        // options = torch::TensorOptions()  krowa
+        // .dtype(torch::kFloat32)
+        // .device(torch::kCUDA,0)
+        // .requires_grad(false)
+        // ;
+
+        gpuArgs.resGold = torch::zeros(totalLength,options);//.to(torch::kCUDA);
+        gpuArgs.resSegm = torch::zeros(totalLength,options);//.to(torch::kCUDA);
+
+
+
     }
 
     auto xRange = gpuArgs.metaData.metaXLength;
@@ -1664,7 +1686,7 @@ inline __global__ void mainPassKernel(ForBoolKernelArgs<TKKI> fbArgs) {
                         if (localBlockMetaData[(i & 1) * 20 + ((1 - isGoldForLocQueue[i]) + 1)] //fp for gold and fn count for not gold
                             > localBlockMetaData[(i & 1) * 20 + ((1 - isGoldForLocQueue[i]) + 3)]) {// so count is bigger than counter so we should validate
                                         // now we look through bits and when some is set we call it a result
-#pragma unroll
+                            #pragma unroll
                             for (uint8_t bitPos = 0; bitPos < 32; bitPos++) {
                                 //if any bit here is set it means it should be added to result list
                                 if (isBitAt(mainShmem[begResShmem + threadIdx.x + threadIdx.y * 32], bitPos)
@@ -2077,26 +2099,27 @@ ForBoolKernelArgs<T> executeHausdoff(ForFullBoolPrepArgs<T>& fFArgs, const int W
     void* kernel_args[] = { &fbArgs };
     cudaLaunchCooperativeKernel((void*)(mainPassKernel<int>), occData.blockForMainPass, dim3(32, occData.warpsNumbForMainPass), kernel_args, 0, stream);
 
+    int len = fbArgs.resultListPointerIterNumbTensor.sizes()[0]; //krowa
+    auto size = sizeof(int32_t) * len;
+
 
     //copy to the output tensor the rsult
     if (resIterNeeded) {
-        auto size = sizeof(int32_t) * fbArgs.resultListPointerIterNumbTensor.sizes()[0];
         cudaMemcpyAsync(fbArgs.resultListPointerIterNumbTensor.data_ptr(), fbArgs.resultListPointerIterNumb, size, cudaMemcpyDeviceToDevice, stream);
+
+        //krowa
+       // cudaMemcpyAsync(fbArgs.resultListPointerLocalTensor.data_ptr(), fbArgs.resultListPointerLocal, size, cudaMemcpyDeviceToDevice, stream);
+        //cudaMemcpyAsync(fbArgs.resultListPointerMetaTensor.data_ptr(), fbArgs.resultListPointerMeta, size, cudaMemcpyDeviceToDevice, stream);
+
+    
     }
     if (res3DNeeded) {
-        auto size = sizeof(int32_t) * fbArgs.resultListPointerIterNumbTensor.sizes()[0];
+        //krowa
         cudaMemcpyAsync(fbArgs.resultListPointerLocalTensor.data_ptr(), fbArgs.resultListPointerLocal, size, cudaMemcpyDeviceToDevice, stream);
         cudaMemcpyAsync(fbArgs.resultListPointerMetaTensor.data_ptr(), fbArgs.resultListPointerMeta, size, cudaMemcpyDeviceToDevice, stream);
     }
 
-    cudaFreeAsync(fbArgs.resultListPointerMeta, stream);
-    cudaFreeAsync(fbArgs.resultListPointerLocal, stream);
-    cudaFreeAsync(fbArgs.resultListPointerIterNumb, stream);
-    cudaFreeAsync(fbArgs.workQueuePointer, stream);
-    cudaFreeAsync(fbArgs.origArrsPointer, stream);
-    cudaFreeAsync(fbArgs.metaDataArrPointer, stream);
-    cudaFreeAsync(fbArgs.mainArrAPointer, stream);
-    cudaFreeAsync(fbArgs.mainArrBPointer, stream);
+
 
 
     cudaFreeAsync(fbArgs.resultListPointerMeta, stream);
@@ -2217,6 +2240,7 @@ at::Tensor getHausdorffDistance_CUDA_FullResList_local(at::Tensor goldStandard,
 
 
     cudaStreamDestroy(stream1);
+    int len = fbArgs.resultListPointerIterNumbTensor.sizes()[0]; //krowa
 
     return fbArgs.resultListPointerIterNumbTensor;
 }
@@ -2271,7 +2295,7 @@ at::Tensor getHausdorffDistance_CUDA_FullResList(at::Tensor goldStandard,
  len - length of result list we will iterate over
  */
 template <typename T>
-__global__ void get3Dres_local_kernel(ForBoolKernelArgs<T> fbArgs, float* resGold, float* resSegm, int len) {
+__global__ void get3Dres_local_kernel(ForBoolKernelArgs<T> fbArgs, int32_t* resGold, int32_t* resSegm, int len, int32_t* iterNumbb) {
 
     //simple grid stride loop
     for (uint32_t i = blockIdx.x * blockDim.x + threadIdx.x; i < len; i += blockDim.x * gridDim.x) {
@@ -2289,26 +2313,20 @@ __global__ void get3Dres_local_kernel(ForBoolKernelArgs<T> fbArgs, float* resGol
             // setting appropriate  spot in the result to a given value
             if (fbArgs.resultListPointerMeta[i] >= isGoldOffset) {
                 //resGold[1] = 1.0;
-                resGold[(xMeta * 32 + xLoc) + (yMeta * fbArgs.dbYLength + yLoc) * fbArgs.Nx + (zMeta * 32 + zLoc) * fbArgs.Nx * fbArgs.Ny] = fbArgs.resultListPointerIterNumb[i];
+                resGold[(xMeta * 32 + xLoc) + (yMeta * fbArgs.dbYLength + yLoc) * fbArgs.Nx + (zMeta * 32 + zLoc) * fbArgs.Nx * fbArgs.Ny] = (iterNumbb[i]);
             }
-            else {
-                resSegm[(xMeta * 32 + xLoc) + (yMeta * fbArgs.dbYLength + yLoc) * fbArgs.Nx + (zMeta * 32 + zLoc) * fbArgs.Nx * fbArgs.Ny] = fbArgs.resultListPointerIterNumb[i];
-            }
-            //uint32_t x = xMeta * 32 + xLoc;
-            //uint32_t y = yMeta * fbArgs.dbYLength + yLoc;
-            //uint32_t z = zMeta * 32 + zLoc;
-            //uint32_t iterNumb = fbArgs.resultListPointerIterNumb[i];
-
-            //printf("resullt linIdexMeta %d x %d y %d z %d  xMeta %d yMeta %d zMeta %d xLoc %d yLoc %d zLoc %d linLocal %d  iterNumb %d \n"
-            //    , linIdexMeta
-            //    , x, y, z
-            //    , xMeta, yMeta, zMeta
-            //    , xLoc, yLoc, zLoc
-            //    , linLocal
-            //    , iterNumb
+       
+        else {
+            resSegm[(xMeta * 32 + xLoc) + (yMeta * fbArgs.dbYLength + yLoc) * fbArgs.Nx + (zMeta * 32 + zLoc) * fbArgs.Nx * fbArgs.Ny] = (iterNumbb[i]);
+        }
+            uint32_t x = xMeta * 32 + xLoc;
+            uint32_t y = yMeta * fbArgs.dbYLength + yLoc;
+            uint32_t z = zMeta * 32 + zLoc;
+            int32_t iterNumb = iterNumbb[i];
         }
     }
 }
+
 
 
 /*
@@ -2316,9 +2334,9 @@ takes two 3D tensord and computes the element wise avarage from two entries and 
 voxelsNumber - number of voxel in resGold = resSegm
 */
 template <typename T>
-__global__ void elementWiseAverage(ForBoolKernelArgs<T> fbArgs, float* resGold, float* resSegm, int voxelsNumber,int maxEl) {
+__global__ void elementWiseAverage(ForBoolKernelArgs<T> fbArgs, int32_t* resGold, int32_t* resSegm, int voxelsNumber,int maxEl) {
     for (uint32_t i = blockIdx.x * blockDim.x + threadIdx.x; i < voxelsNumber; i += blockDim.x * gridDim.x) {
-        resGold[i] = (resGold[i] + resSegm[i]) / 2*maxEl;
+        resGold[i] = (resGold[i] + resSegm[i]);//*maxEl;
     }
 }
 
@@ -2332,7 +2350,8 @@ template <typename T>
 at::Tensor getHausdorffDistance_CUDA_3Dres_local(at::Tensor goldStandard,
     at::Tensor algoOutput
     , int WIDTH, int HEIGHT, int DEPTH, float robustnessPercent, at::Tensor numberToLookFor) {
-    //TODO() use https ://pytorch.org/cppdocs/notes/tensor_cuda_stream.html
+
+    
     cudaStream_t stream1;
     cudaStreamCreate(&stream1);
 
@@ -2352,16 +2371,24 @@ at::Tensor getHausdorffDistance_CUDA_3Dres_local(at::Tensor goldStandard,
     ForBoolKernelArgs<T> fbArgs = executeHausdoff(forFullBoolPrepArgs, WIDTH, HEIGHT, DEPTH, occData, stream1, false, robustnessPercent, true, true);
 
 
-    auto options =
-        torch::TensorOptions()
-        .dtype(torch::kFloat32)
-        .device(torch::kCUDA, 0)
-        .requires_grad(false);
+    cudaDeviceSynchronize();
 
-    at::Tensor resGold = torch::zeros({ WIDTH, HEIGHT, DEPTH }, options);
-    at::Tensor resSegm = torch::zeros({ WIDTH, HEIGHT, DEPTH }, options);
+    // int totalLength= WIDTH*HEIGHT* DEPTH;
+    //     auto options = torch::TensorOptions()
+    //     .dtype(torch::kFloat32)
+    //     //.device(torch::kCUDA,0)
+    //     .requires_grad(false)
+    //     ;
 
-    int len = fbArgs.resultListPointerIterNumbTensor.sizes()[0];
+    // at::Tensor resGold = torch::zeros(totalLength,options);//.to(torch::kCUDA);
+    // at::Tensor resSegm = torch::zeros(totalLength,options);//.to(torch::kCUDA);
+
+    //at::Tensor resGold = torch::zeros({ WIDTH, HEIGHT, DEPTH }, options);
+    //at::Tensor resSegm = torch::empty({ WIDTH, HEIGHT, DEPTH }, options);
+
+
+    int len = fbArgs.resultListPointerIterNumbTensor.sizes()[0]; //krowa
+
 
     //occupancy calculator
     int minGridSize = 0;
@@ -2372,9 +2399,12 @@ at::Tensor getHausdorffDistance_CUDA_3Dres_local(at::Tensor goldStandard,
         (void*)get3Dres_local_kernel<T>,
         0);
 
-
+    
     //simple one dimensional kernel
-    get3Dres_local_kernel << <minGridSize, blockSize, 0, stream1 >> > (fbArgs, (float*)resGold.data_ptr(), (float*)resSegm.data_ptr(), len);
+    get3Dres_local_kernel << <minGridSize, blockSize, 0, stream1 >> > (fbArgs, (int32_t*)fbArgs.resGold.data_ptr()
+    , (int32_t*)fbArgs.resSegm.data_ptr()
+    , len
+    ,(int32_t*)fbArgs.resultListPointerIterNumbTensor.data_ptr());
 
 
     cudaOccupancyMaxPotentialBlockSize(
@@ -2386,14 +2416,16 @@ at::Tensor getHausdorffDistance_CUDA_3Dres_local(at::Tensor goldStandard,
     int maxEl = forFullBoolPrepArgs.metaData.minMaxes[13];
 
     //get element wise average
-    elementWiseAverage << <minGridSize, blockSize, 0, stream1 >> > (fbArgs, (float*)resGold.data_ptr(), (float*)resSegm.data_ptr(), WIDTH * HEIGHT * DEPTH, maxEl);
+    elementWiseAverage << <minGridSize, blockSize, 0, stream1 >> > (fbArgs, (int32_t*)fbArgs.resGold.data_ptr(), (int32_t*)fbArgs.resSegm.data_ptr(), WIDTH * HEIGHT * DEPTH, maxEl);
 
 
     cudaFreeAsync(fbArgs.minMaxes, stream1);
 
     cudaStreamDestroy(stream1);
 
-    return  resGold;
+    cudaDeviceSynchronize();
+
+    return  fbArgs.resGold;
 
 }
 
