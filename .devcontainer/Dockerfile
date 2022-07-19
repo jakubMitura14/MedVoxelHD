@@ -68,11 +68,18 @@ RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39
  && rm /app/environment.yml \
  && conda clean -ya
 
-RUN  pip install pymia
-RUN  pip install gspread
-RUN  pip install nibabel
-RUN  pip install itk
-RUN  pip install monai
+RUN pip install pymia
+RUN pip install gspread
+RUN pip install nibabel
+RUN pip install itk
+RUN pip install monai
+RUN git clone https://github.com/Homebrew/brew ~/.linuxbrew/Homebrew \
+&& mkdir ~/.linuxbrew/bin \
+&& ln -s ../Homebrew/bin/brew ~/.linuxbrew/bin \
+&& eval $(~/.linuxbrew/bin/brew shellenv) \
+&& brew --version
+
+RUN brew install enzyme
 
 
 #export PATH=/usr/local/cuda-11.3/bin${PATH:+:${PATH}}$ 
