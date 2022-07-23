@@ -1,85 +1,52 @@
-
-
-
-
-
-
-from __future__ import division
-from __future__ import print_function
-
-import numpy as np
-
-from monai.utils import first, set_determinism
-from monai.transforms import (
-    AsDiscrete,
-    AsDiscreted,
-    EnsureChannelFirstd,
-    Compose,
-    CropForegroundd,
-    LoadImaged,
-    Orientationd,
-    RandCropByPosNegLabeld,
-    ScaleIntensityRanged,
-    Spacingd,
-
-)
-from monai.networks.nets import UNet
-from monai.networks.layers import Norm
-from monai.metrics import DiceMetric
-from monai.losses import DiceLoss
-from monai.inferers import sliding_window_inference
-from monai.data import CacheDataset, DataLoader, Dataset, decollate_batch
-from monai.config import print_config
-from monai.apps import download_and_extract
-import torch
-import matplotlib.pyplot as plt
-import tempfile
-import shutil
-import os
-import glob
-
-import gspread as gspread
-import pymia
-import csv
-import pandas as pd
-
-
-
-
-from monai.transforms import *
-
-from monai.transforms import (
-    LoadImage, LoadImaged, EnsureChannelFirstd,
-    Resized,  Compose
-)
-from monai.config import print_config
-import re
-
-
-
-
+from __future__ import division, print_function
 
 import argparse
-import numpy as np
-import torch
+import csv
+import glob
+import os
+import re
+import shutil
+import tempfile
 import unittest
+import gspread as gspread
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pymia
+import torch
+from monai.apps import download_and_extract
+from monai.config import print_config
+from monai.data import CacheDataset, DataLoader, Dataset, decollate_batch
+from monai.inferers import sliding_window_inference
+from monai.losses import DiceLoss
+from monai.metrics import (DiceMetric, HausdorffDistanceMetric,
+                           SurfaceDistanceMetric)
+from monai.networks.layers import Norm
+from monai.networks.nets import UNet
+from monai.transforms import *
+from monai.transforms import (AsDiscrete, AsDiscreted, Compose,
+                              CropForegroundd, EnsureChannelFirstd, LoadImage,
+                              LoadImaged, Orientationd, RandCropByPosNegLabeld,
+                              Resized, ScaleIntensityRanged, Spacingd)
+from monai.utils import first, set_determinism
+from torch.utils import benchmark
 
+##
+## Benchmark based on data from dataset CT-Org https://wiki.cancerimagingarchive.net/display/Public/CT-ORG%3A+CT+volumes+with+multiple+organ+segmentations
+## One should download the data into a folder and provide its path into data_dir variable
+##    data_dir should have two subdirectories labels and volumes in volumes only images should be present in labels only labels
+## Additionally result from benchmark will be saved to csv file in provided path by csvPath
+##
 
+csvPath = "/workspaces/Hausdorff_morphological/csvResB.csv"
+data_dir = "/workspaces/Hausdorff_morphological/CT_ORG"
 
 from torch.utils.cpp_extension import load
+
 lltm_cuda = load('lltm_cuda', ['lltm_cuda.cpp', 'lltm_cuda_kernel.cu'], verbose=True)
 #help(lltm_cuda)
 device = torch.device("cuda")
 
-
-
-from monai.metrics import HausdorffDistanceMetric
-from monai.metrics import SurfaceDistanceMetric
-from torch.utils import benchmark
-
-
-csvPath = "/workspaces/forPytorchExtension/data/CTorgMini/csvRes.csv"
-data_dir = "/workspaces/forPytorchExtension/data/CTorgMini"
 
 #robust monai calculation
 def hdToTestRobust(a, b,  WIDTH,  HEIGHT,  DEPTH):
@@ -117,8 +84,6 @@ def mymedianHd(a, b,  WIDTH,  HEIGHT,  DEPTH):
 
 
 
-
-
 #for benchmarking  testNameStr the name of function defined above
 #a,b input to benchmarking
 #numberOfRuns - on the basis of how many iterations the resulting time will be established
@@ -132,14 +97,11 @@ def pytorchBench(a,b,testNameStr, numberOfRuns,  WIDTH,  HEIGHT,  DEPTH):
 
 
 
-#timeMonaiRobust= pytorchBench(a,b,"hdToTestRobust", numberOfRuns)
-#timeMonaiNonRobust= pytorchBench(a,b,"hdToTest", numberOfRuns
-
 def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,translations ):
-                    #try:                
+                    try:                
                         #oliviera tuple return both result and benchamrking time
-                        #olivieraTuple = lltm_cuda.benchmarkOlivieraCUDA(labelBoolTensorA, labelBoolTensorB,sizz[2], sizz[3],sizz[4])
-                        numberOfRuns=2#the bigger the more reliable are benchmarks but also slower
+                        olivieraTuple = lltm_cuda.benchmarkOlivieraCUDA(labelBoolTensorA, labelBoolTensorB,sizz[2], sizz[3],sizz[4])
+                        numberOfRuns=10#the bigger the more reliable are benchmarks but also slower
                         #get benchmark times
 
                         hdToTestRobustTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"hdToTestRobust",numberOfRuns,   sizz[2], sizz[3],sizz[4])
@@ -149,7 +111,7 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
                         myRobustHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"myRobustHd", numberOfRuns,  sizz[2], sizz[3],sizz[4])
                         myHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"myHd",  numberOfRuns, sizz[2], sizz[3],sizz[4])
                         mymedianHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"mymedianHd", numberOfRuns,  sizz[2], sizz[3],sizz[4])
-                        #olivieraTime = olivieraTuple[1]
+                        olivieraTime = olivieraTuple[1]
                         #get values from the functions
                         hdToTestRobustValue= hdToTestRobust(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
                         hdToTestValue= hdToTest(labelBoolTensorA, labelBoolTensorB, sizz[2], sizz[3],sizz[4])
@@ -158,7 +120,7 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
                         myRobustHdValue= myRobustHd(labelBoolTensorA, labelBoolTensorB,  sizz[2], sizz[3],sizz[4])
                         myHdValue= myHd(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
                         mymeanHdValue= mymedianHd(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
-                        #olivieraValue= olivieraTuple[0]
+                        olivieraValue= olivieraTuple[0]
                         #constructing row for panda data frame
                         series = {'hdToTestRobustTime': hdToTestRobustTime
                                   ,'hdToTestTime': hdToTestTime
@@ -166,13 +128,13 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
                                   ,'myRobustHdTime':myRobustHdTime
                                   ,'myHdTime': myHdTime
                                   ,'mymedianHdTime':mymedianHdTime
-                                  #,'olivieraTime': olivieraTime
+                                  ,'olivieraTime': olivieraTime
                                   ,'hdToTestRobustValue': hdToTestRobustValue
                                   ,'hdToTestValue':hdToTestValue
                                   ,'myRobustHdValue': myRobustHdValue
                                   ,'myHdValue': myHdValue
                                   ,'mymeanHdValue': mymeanHdValue
-                                  #,'olivieraValue': olivieraValue
+                                  ,'olivieraValue': olivieraValue
                                   ,'avSurfDistToTestValue': avSurfDistToTestValue
                                   ,'myRobustHdTime': myRobustHdTime
                                   ,'hdToTestValue ':hdToTestValue 
@@ -183,9 +145,9 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
                                   ,'distortion':distortion
                                   ,'translations':translations }
                         df=df.append(series, ignore_index = True)
-                    #except:
-                        #print("An exception occurred")
-                        return df
+                    except:
+                        print("An exception occurred")
+                    return df
 
 #iterating over given data set
 def iterateOver(dat,df,noise,distortion ):
@@ -223,6 +185,11 @@ def iterateOver(dat,df,noise,distortion ):
 
 
 def benchmarkMitura():
+    """
+    main function responsible for iterating over dataset executing algorithm and its reference 
+    and storing benchmark results in csv through pandas dataframe
+    """
+
     set_determinism(seed=0)
     val_transforms = Compose(
     [
@@ -258,7 +225,6 @@ def benchmarkMitura():
         RandAffined(keys=["image", "label"], prob=1.0)
     ])
     
-
 
 
     train_images = sorted(
@@ -307,103 +273,16 @@ def benchmarkMitura():
             df=iterateOver(dat,df,1,0) 
     except:
         print("An exception occurred")
-cuda0 = torch.device('cuda:0')
-def my3dResult(a, b,  WIDTH,  HEIGHT,  DEPTH):
-    arr= lltm_cuda.getHausdorffDistance_3Dres(a, b,  WIDTH,  HEIGHT,  DEPTH,1.0, torch.ones(1, dtype =bool).to(cuda0) ).cpu().detach().numpy()
-    print(np.sum(arr))
-    dset = f.create_dataset("3dResulttoLooki", data=arr)
+
+benchmarkMitura()
 
 
-val_transformsWithRandomdeformations = Compose(
-    [
-        LoadImaged(keys=["image", "label"]),
-        EnsureChannelFirstd(keys=["image", "label"]),
-        Spacingd(keys=["image", "label"], pixdim=(
-            1.0, 1.0, 1.0), mode=("bilinear", "nearest")),
-        Orientationd(keys=["image", "label"], axcodes="RAS"),
-       CropForegroundd(keys=["image", "label"], source_key="image"),
-        EnsureTyped(keys=["image", "label"]),
-        RandAffined(keys=["image", "label"], prob=1.0)
-    ])
-
-val_transforms = Compose(
-    [
-        LoadImaged(keys=["image", "label"]),
-        EnsureChannelFirstd(keys=["image", "label"]),
-        Spacingd(keys=["image", "label"], pixdim=(
-            1.0, 1.0, 1.0), mode=("bilinear", "nearest")),
-        Orientationd(keys=["image", "label"], axcodes="RAS"),
-       CropForegroundd(keys=["image", "label"], source_key="image"),
-        EnsureTyped(keys=["image", "label"]),
-    ])
-
-
-train_images = sorted(
-        glob.glob(os.path.join(data_dir, "volumes", "*.nii.gz")))
-
-train_labels = sorted(
-        glob.glob(os.path.join(data_dir, "labels", "*.nii.gz")))
-
-data_dicts = [
-        {"image": image_name, "label": label_name}
-        for image_name, label_name in zip(train_images, train_labels)
-    ]
-check_ds_tr = Dataset(data=data_dicts, transform=val_transformsWithRandomdeformations)
-check_loader_tr = DataLoader(check_ds_tr, batch_size=1)
-
-check_ds = Dataset(data=data_dicts, transform=val_transforms)
-check_loader = DataLoader(check_ds, batch_size=1)
-
-dat1=0
-dat2=0
-
-for dat in check_loader:
-    dat1=dat
-
-for dat in check_loader_tr:
-    dat2=dat
-
-print(dat1['image'].shape)
-print(dat2['image'].shape)
-
-
-sizz= dat1['image'].shape      
-labelBoolTensorA =  torch.where( dat1['label']==1, 1, 0).bool().to(device)            
-summA= torch.sum(labelBoolTensorA)
-labelBoolTensorB =torch.where( dat2['label']==1, 1, 0).bool().to(device)
-
-translationNumb=90
-translated=torch.zeros_like(labelBoolTensorA)
-translated[:,:,:,:,translationNumb:sizz[4]]= labelBoolTensorA[:,:,:,:,0:(sizz[4]-translationNumb)]
-
-labelBoolTensorA =translated
+# cuda0 = torch.device('cuda:0')
+# def my3dResult(a, b,  WIDTH,  HEIGHT,  DEPTH):
+#     arr= lltm_cuda.getHausdorffDistance_3Dres(a, b,  WIDTH,  HEIGHT,  DEPTH,1.0, torch.ones(1, dtype =bool).to(cuda0) ).cpu().detach().numpy()
+#     print(np.sum(arr))
+#     dset = f.create_dataset("3dResulttoLooki", data=arr)
 
 
 
-hd = HausdorffDistanceMetric()
-hd(y_pred=labelBoolTensorA, y=labelBoolTensorB)  # callable to add metric to the buffer
-metric = hd.aggregate().item()
-print("metric")
-print(metric)
-print("my")
-
-WIDTH = 336;
-HEIGHT = 250;
-DEPTH = 371;
-
-#arr= lltm_cuda.getHausdorffDistance_3Dres(labelBoolTensorA, labelBoolTensorB,  DEPTH,  HEIGHT,  WIDTH,1.0, torch.ones(1, dtype =bool).to(cuda0) ).cpu().detach().numpy()
-arr= lltm_cuda.getHausdorffDistance_3Dres(labelBoolTensorA, labelBoolTensorB,  WIDTH,  HEIGHT,  DEPTH,1.0, torch.ones(1, dtype =bool).to(cuda0) ).cpu().detach().numpy()
-print(np.max(arr))
-
-
-
-import h5py
-f = h5py.File("/workspaces/forPytorchExtension/data/hdf5Data/smallLiverDataSet.hdf5", "r+")
-# f.create_dataset("3dResulttoLooki", data=labelBoolTensorA)
-# f.create_dataset("3dResulttoLooki", data=labelBoolTensorB)
-
-dset = f.create_dataset("3dResulttoLookmc", data=arr)
-
-
-f.close()
 
