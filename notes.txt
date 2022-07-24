@@ -21,3 +21,15 @@ it is better for some reason to run jit commands from python inside visual studi
 // python C:\Users\jakub\source\repos\extension-cpp\setup.py install
 // python C:\Users\jakub\source\repos\extension-cpp\jit.py
 
+
+
+Mean Housdorff as loss function
+
+https://www.arxiv-vanity.com/papers/1806.07564/
+
+
+Morphological as loss
+https://arxiv.org/pdf/1904.10030.pdf
+
+In Github
+https://github.com/PatRyg99/HausdorffLoss/blob/master/hausdorff_loss.py

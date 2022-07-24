@@ -73,14 +73,50 @@ RUN pip install gspread
 RUN pip install nibabel
 RUN pip install itk
 RUN pip install monai
-RUN git clone https://github.com/Homebrew/brew ~/.linuxbrew/Homebrew \
-&& mkdir ~/.linuxbrew/bin \
-&& ln -s ../Homebrew/bin/brew ~/.linuxbrew/bin \
-&& eval $(~/.linuxbrew/bin/brew shellenv) \
-&& brew --version
+RUN pip install gspread
+RUN pip install warp-lang==0.3.1
+
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
+USER root
+ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
+USER user
+
+# RUN git clone https://github.com/Homebrew/brew ~/.linuxbrew/Homebrew \
+# && mkdir ~/.linuxbrew/bin \
+# && ln -s ../Homebrew/bin/brew ~/.linuxbrew/bin \
+# && eval $(~/.linuxbrew/bin/brew shellenv) \
+# && brew --version
+# RUN export PATH=$HOME/.linuxbrew/bin:$PATH
+
 
 RUN brew install enzyme
 
+USER root
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl ca-certificates gnupg2 less sudo \
+ # Spicy build and test dependencies.
+ && apt-get install -y --no-install-recommends git cmake ninja-build ccache bison flex g++ libfl-dev zlib1g-dev libssl-dev jq locales-all make \
+ # Spicy doc dependencies.
+ && apt-get install -y --no-install-recommends python3 python3-pip python3-sphinx python3-sphinx-rtd-theme python3-setuptools python3-wheel doxygen \
+ && pip3 install "btest>=0.66" pre-commit \
+ # Install a recent CMake.
+ && mkdir -p /opt/cmake \
+ && curl -L https://github.com/Kitware/CMake/releases/download/v3.18.0/cmake-3.18.0-Linux-x86_64.tar.gz | tar xzvf - -C /opt/cmake --strip-components 1 \
+ && apt-get clean \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+#sudo apt install clang-11 libclang-11-dev llvm-11-tools llvm-11-dev
+# RUN wget -O - https://apt.llvm.org/llvm.sh
+# RUN pip install lit
+# RUN git clone https://github.com/vgvassilev/clad.git ${HOME}/clad
+# RUN mkdir ${HOME}/build_dir inst; cd ${HOME}/build_dir
+# RUN cmake ${HOME}/clad -DClang_DIR=/usr/lib/llvm-11 -DLLVM_DIR=/usr/lib/llvm-11 -DCMAKE_INSTALL_PREFIX=../inst -DLLVM_EXTERNAL_LIT="``which lit``"
+# RUN make && make install
+RUN conda install -c conda-forge clad
+
+USER user
 
 #export PATH=/usr/local/cuda-11.3/bin${PATH:+:${PATH}}$ 
 #export LD_LIBRARY_PATH=/usr/local/cuda-11.3/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
