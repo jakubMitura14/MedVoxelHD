@@ -16,7 +16,7 @@ dim_z = 32
 
 scale = 150.0
 
-query_radius = 8.0
+query_radius = 50.0
 
 
 @wp.kernel
@@ -54,8 +54,8 @@ def test_hashgrid_query( device):
     grid = wp.HashGrid(dim_x, dim_y, dim_z, device)
 
     points = [[1.0, 2.0, 2.0]
-               ,[1.0, 3.0, 2.0]
-                ,[1.0,4.0,2.0]]
+               ,[1.0, 22.0, 2.0]
+                ,[1.0,0.0,2.0]]
 
 
     points_arr = wp.array(points, dtype=wp.vec3, device=device)

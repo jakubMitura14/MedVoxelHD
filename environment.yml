@@ -12,9 +12,9 @@ dependencies:
 - pandas
 - matplotlib
 - ninja
-- pymia
-- gspread
-- nibabel
-- itk
-- monai
-- warp-lang
+# - pymia
+# - gspread
+# - nibabel
+# - itk
+# - monai
+# - warp-lang
