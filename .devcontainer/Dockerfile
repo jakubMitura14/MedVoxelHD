@@ -68,13 +68,13 @@ RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39
  && rm /app/environment.yml \
  && conda clean -ya
 
-RUN pip install pymia
-RUN pip install gspread
-RUN pip install nibabel
-RUN pip install itk
-RUN pip install monai
-RUN pip install gspread
-RUN pip install warp-lang==0.3.1
+# RUN pip install pymia
+# RUN pip install gspread
+# RUN pip install nibabel
+# RUN pip install itk
+# RUN pip install monai
+# RUN pip install gspread
+# RUN pip install warp-lang==0.3.1
 
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
 USER root
