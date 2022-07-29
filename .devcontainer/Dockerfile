@@ -115,6 +115,7 @@ RUN apt-get update \
 # RUN cmake ${HOME}/clad -DClang_DIR=/usr/lib/llvm-11 -DLLVM_DIR=/usr/lib/llvm-11 -DCMAKE_INSTALL_PREFIX=../inst -DLLVM_EXTERNAL_LIT="``which lit``"
 # RUN make && make install
 RUN conda install -c conda-forge clad
+RUN pip install pip install pytorch-lightning
 
 USER user
 

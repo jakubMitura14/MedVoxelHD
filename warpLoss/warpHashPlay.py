@@ -4,11 +4,7 @@ import numpy as np
 
 import warp as wp
 from warp.tests.test_base import *
-
-np.random.seed(532)
-
 wp.init()
-
 num_points = 3
 dim_x = 32
 dim_y = 32
@@ -32,16 +28,15 @@ def count_neighbors(grid : wp.uint64,
 
     # query point    
     p = points[i]
+    print(p)
     maxx = float(0)
 
     # construct query around point p
+    
     neighbors = wp.hash_grid_query(grid, p, radius)
-
     for index in neighbors:
-
         # compute distance to point
         d = wp.length(p - points[index])
-
         if (d <= radius):
             maxx= wp.max(d,maxx)
 
@@ -50,17 +45,12 @@ def count_neighbors(grid : wp.uint64,
 
 
 def test_hashgrid_query( device):
-        
     grid = wp.HashGrid(dim_x, dim_y, dim_z, device)
-
     points = [[1.0, 2.0, 2.0]
                ,[1.0, 22.0, 2.0]
                 ,[1.0,0.0,2.0]]
-
-
     points_arr = wp.array(points, dtype=wp.vec3, device=device)
     counts_arr = wp.zeros(len(points), dtype=wp.types.float32, device=device)
-
 
     grid.build(points_arr, query_radius)
     wp.synchronize()

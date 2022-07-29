@@ -1,6 +1,7 @@
 CT_ORG/
 env/
 _extensions/
+spleenData/
 env/Lib/site-packages/easy_install.py
 env/Lib/site-packages/pip/__init__.py
 env/Lib/site-packages/pip/__main__.py
