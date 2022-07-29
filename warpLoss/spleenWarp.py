@@ -51,9 +51,9 @@ root_dir='/workspaces/Hausdorff_morphological/spleenData'
 
 
 def mainPartWarpLoss(index,a,bList,radius):
-    a=a[1,:,:,:]
-    b=bList[index][0,:,:,:]
-    argss= mainWarpLoss.prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
+    # a=a[1,:,:,:]
+    # b=bList[index][0,:,:,:]
+    argss= mainWarpLoss.prepare_tensors_for_warp_loss(a[1,:,:,:], bList[index][0,:,:,:],radius,devicesWarp[1])
     mainWarpLoss.getHausdorff.apply(*argss)
     # print(argss[0])
     # print(argss[1])
@@ -61,13 +61,16 @@ def mainPartWarpLoss(index,a,bList,radius):
 
 def meanWarpLoss(aList, bList):
     radius = 500.0#TODO increase
-    summ=torch.zeros(1, requires_grad=True).to('cuda')
-    lenSum=torch.zeros(1, requires_grad=True).to('cuda')
-    catRes=torch.stack(list(map(lambda tupl: mainPartWarpLoss(tupl[0],tupl[1],decollate_batch(bList.bool()),radius) ,enumerate(decollate_batch(aList.bool())))))
+    # summ=torch.zeros(1, requires_grad=True).to('cuda')
+    # lenSum=torch.zeros(1, requires_grad=True).to('cuda')
+    return torch.mean(torch.stack(list(map(
+        lambda tupl: mainPartWarpLoss(tupl[0],tupl[1]
+                                        ,decollate_batch(bList.bool()),radius) 
+                                    ,enumerate(decollate_batch(aList.bool()))))))
   
     #print(f"waarp loss  {torch.nanmean(catRes)}")
 
-    return torch.nanmean(catRes).to('cuda')
+    #return torch.nanmean(catRes).to('cuda')
 
 
 
@@ -183,7 +186,7 @@ class Net(pytorch_lightning.LightningModule):
 
     def train_dataloader(self):
         train_loader = DataLoader(
-            self.train_ds, batch_size=2, shuffle=True,
+            self.train_ds, batch_size=1, shuffle=True,
             num_workers=4, collate_fn=list_data_collate,
         )
         return train_loader
