@@ -67,6 +67,7 @@ RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39
  && conda env update -n base -f /app/environment.yml \
  && rm /app/environment.yml \
  && conda clean -ya
+RUN conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
 
 RUN pip install pymia
 RUN pip install gspread

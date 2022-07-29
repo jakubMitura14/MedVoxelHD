@@ -37,11 +37,55 @@ import tempfile
 import shutil
 import os
 import glob
+import mainWarpLoss
+import warp as wp
+import statistics
 
+
+wp.init()
+devicesWarp = wp.get_devices()
 print_config()
 
 data_dir = '/workspaces/Hausdorff_morphological/spleenData/Task09_Spleen/Task09_Spleen/Task09_Spleen'
 root_dir='/workspaces/Hausdorff_morphological/spleenData'
+
+
+def mainPartWarpLoss(index,a,bList,radius):
+    print(" in loss ")
+    print(a.shape)
+    print(bList[index].shape)
+
+    a=a[1,:,:,:]
+    b=bList[index][0,:,:,:]
+    #print(devicesWarp)
+
+    # argss= prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
+    # ress=getHausdorff.apply(*argss)
+    argss= mainWarpLoss.prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
+    ress= mainWarpLoss.getHausdorff.apply(*argss)
+    return torch.cat([ress[0],ress[1]])
+    # torch.add(torch.sum(argss[0]),summ)
+    # torch.add(torch.sum(argss[1]),summ)
+    # print(f'torch.sum(ress[0]) {torch.sum(argss[0])} torch.sum(ress[1]) {torch.sum(argss[1])}  ')
+    # torch.add(torch.numel(argss[0]),lenSum)
+    # torch.add(torch.numel(argss[1]),lenSum)
+    # print(f"waarp loss  {summ} {lenSum} {torch.div(summ,lenSum)}")
+def meanWarpLoss(aList, bList):
+    radius = 500.0#TODO increase
+    summ=torch.zeros(1, requires_grad=True).to('cuda')
+    lenSum=torch.zeros(1, requires_grad=True).to('cuda')
+    catRes=torch.cat(list(map(lambda tupl: mainPartWarpLoss(tupl[0],tupl[1],bList,radius) ,enumerate(aList))))
+   
+   
+    print(f"waarp loss  {torch.mean(catRes)}")
+
+    return torch.mean(catRes).to('cuda')
+    
+onesA=torch.ones(1, requires_grad=True).to('cuda')
+onesB=torch.ones(1, requires_grad=True).to('cuda')
+ones=torch.ones(1, requires_grad=True).to('cuda')
+torch.cat([ones,onesA,onesB])
+
 
 class Net(pytorch_lightning.LightningModule):
     def __init__(self):
@@ -171,7 +215,10 @@ class Net(pytorch_lightning.LightningModule):
     def training_step(self, batch, batch_idx):
         images, labels = batch["image"], batch["label"]
         output = self.forward(images)
-        loss = self.loss_function(output, labels)
+        print("in training")
+        print(decollate_batch(output.bool())[0].shape)
+        loss = meanWarpLoss(decollate_batch(output.bool()),decollate_batch(labels.bool()))
+        #loss = self.loss_function(output, labels)
         tensorboard_logs = {"train_loss": loss.item()}
         return {"loss": loss, "log": tensorboard_logs}
 
@@ -181,7 +228,14 @@ class Net(pytorch_lightning.LightningModule):
         sw_batch_size = 4
         outputs = sliding_window_inference(
             images, roi_size, sw_batch_size, self.forward)
-        loss = self.loss_function(outputs, labels)
+        print("in validation")
+        print(decollate_batch(outputs.bool())[0].shape)
+        
+        loss = meanWarpLoss(decollate_batch(outputs.bool()),decollate_batch(labels.bool()))
+
+        #print(decollate_batch(outputs)[0][1,:,:,:].shape)
+
+        #loss = self.loss_function(outputs, labels)
         outputs = [self.post_pred(i) for i in decollate_batch(outputs)]
         labels = [self.post_label(i) for i in decollate_batch(labels)]
         self.dice_metric(y_pred=outputs, y=labels)

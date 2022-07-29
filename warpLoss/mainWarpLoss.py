@@ -60,14 +60,14 @@ def prepare_tensors_for_warp_loss(y_true, y_hat,radius,device):
     ####first we will look around of all fp points     
     num_points_fp = torch.sum(fp).item()
     #to sparse - to get indicies - that transpose for correct dim
-    fpIndicies = torch.from_numpy(np.argwhere(fp.cpu().numpy())).type(torch.float32).contiguous().to('cuda') 
-    goldIndicies =  torch.from_numpy(np.argwhere(y_true.cpu().numpy())).type(torch.float32).contiguous().to('cuda') 
-    counts_arr_fp = torch.zeros(num_points_fp, dtype=torch.float32).to('cuda')     
+    fpIndicies = torch.argwhere(fp).type(torch.float32).contiguous().to('cuda') 
+    goldIndicies =  torch.argwhere(y_true).type(torch.float32).contiguous().to('cuda') 
+    counts_arr_fp = torch.zeros(num_points_fp, dtype=torch.float32, requires_grad=True).to('cuda')     
  
     num_points_fn = torch.sum(fn).item()
-    fnIndicies = torch.from_numpy(np.argwhere(fn.cpu().numpy())).type(torch.float32).contiguous().to('cuda') 
-    segmIndicies =  torch.from_numpy(np.argwhere(y_hat.cpu().numpy())).type(torch.float32).contiguous().to('cuda') 
-    counts_arr_fn = torch.zeros(num_points_fn, dtype=torch.float32).to('cuda') 
+    fnIndicies = torch.argwhere(fn).type(torch.float32).contiguous().to('cuda') 
+    segmIndicies =  torch.argwhere(y_hat).type(torch.float32).contiguous().to('cuda') 
+    counts_arr_fn = torch.zeros(num_points_fn, dtype=torch.float32, requires_grad=True).to('cuda') 
 
 
     # fpIndicies = torch.t(fp.to_sparse().indices()).type(torch.float32).contiguous().to('cuda') 
