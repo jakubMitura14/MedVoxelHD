@@ -134,8 +134,8 @@ class getHausdorff(torch.autograd.Function):
 
 
 
-        return (wp.to_torch(ctx.counts_arr_fp),
-                wp.to_torch(ctx.counts_arr_fn))
+        # return (wp.to_torch(ctx.counts_arr_fp),
+        #         wp.to_torch(ctx.counts_arr_fn))
 
 
 
