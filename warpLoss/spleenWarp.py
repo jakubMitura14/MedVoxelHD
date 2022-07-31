@@ -72,6 +72,16 @@ def meanWarpLoss(aList, bList):
 
     #return torch.nanmean(catRes).to('cuda')
 
+def mainPartWarpLossSingleBatch(a,b):
+    radius=300.0
+    # a=a[1,:,:,:]
+    # b=bList[index][0,:,:,:]
+    argss= mainWarpLoss.prepare_tensors_for_warp_loss(a[0,1,:,:,:].bool(), b[0,0,:,:,:].bool(),radius,devicesWarp[1])
+    mainWarpLoss.getHausdorff.apply(*argss)
+    # print(argss[0])
+    # print(argss[1])
+    return torch.mean(torch.stack([torch.mean(argss[0]),torch.mean(argss[1])]))
+
 
 
 
@@ -138,7 +148,7 @@ class Net(pytorch_lightning.LightningModule):
                     spatial_size=(96, 96, 96),
                     pos=1,
                     neg=1,
-                    num_samples=4,
+                    num_samples=1,
                     image_key="image",
                     image_threshold=0,
                 ),
@@ -203,9 +213,11 @@ class Net(pytorch_lightning.LightningModule):
     def training_step(self, batch, batch_idx):
         images, labels = batch["image"], batch["label"]
         output = self.forward(images)
-        # print("in training")
-        # print(decollate_batch(output.bool())[0].shape)
-        loss = meanWarpLoss(output,labels)
+        print("in training")
+        # print(output.shape)
+        # print(labels.shape)
+        loss = mainPartWarpLossSingleBatch(output,labels)
+        print(loss)
         #loss = self.loss_function(output, labels)
         tensorboard_logs = {"train_loss": loss.item()}
         return {"loss": loss, "log": tensorboard_logs}
@@ -213,13 +225,14 @@ class Net(pytorch_lightning.LightningModule):
     def validation_step(self, batch, batch_idx):
         images, labels = batch["image"], batch["label"]
         roi_size = (160, 160, 160)
-        sw_batch_size = 4
+        sw_batch_size = 1
         outputs = sliding_window_inference(
             images, roi_size, sw_batch_size, self.forward)
-        # print("in validation")
-        # print(decollate_batch(outputs.bool())[0].shape)
-        loss = meanWarpLoss(outputs,labels)
-
+        print("in validation")
+        # print(outputs.shape)
+        # print(labels.shape)
+        loss = mainPartWarpLossSingleBatch(outputs,labels)
+        print(loss)
         # loss = meanWarpLoss(decollate_batch(outputs.bool()),decollate_batch(labels.bool()))
 
         #print(decollate_batch(outputs)[0][1,:,:,:].shape)

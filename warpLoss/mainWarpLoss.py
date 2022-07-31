@@ -70,19 +70,9 @@ def prepare_tensors_for_warp_loss(y_true, y_hat,radius,device):
     counts_arr_fn = torch.zeros(num_points_fn, dtype=torch.float32, requires_grad=True).to('cuda') 
 
 
-    # fpIndicies = torch.t(fp.to_sparse().indices()).type(torch.float32).contiguous().to('cuda') 
-    # goldIndicies =  torch.t(y_true.to_sparse().indices()).type(torch.float32).contiguous().to('cuda') 
-    # counts_arr_fp = torch.zeros(num_points_fp, dtype=torch.float32).to('cuda')     
- 
-    # num_points_fn = torch.sum(fn).item()
-    # fnIndicies = torch.t(fn.to_sparse().indices()).type(torch.float32).contiguous().to('cuda') 
-    # segmIndicies =  torch.t(y_hat.to_sparse().indices()).type(torch.float32).contiguous().to('cuda') 
-    # counts_arr_fn = torch.zeros(num_points_fn, dtype=torch.float32).to('cuda') 
-
     return (counts_arr_fp,counts_arr_fn,fpIndicies,goldIndicies,fnIndicies,segmIndicies
     ,radius,device,dim_x,dim_y,dim_z,num_points_fp, num_points_fn
     )
-    ####secondly we will look around of all fn points 
 
 
 
@@ -124,6 +114,7 @@ class getHausdorff(torch.autograd.Function):
                     ctx.goldIndicies,
                     ctx.counts_arr_fp
                     ], device=device)
+            wp.synchronize()
 
             wp.launch(kernel=count_neighbors, dim=  num_points_fn, inputs=[gridB.id
                                 ,radius,
@@ -132,7 +123,8 @@ class getHausdorff(torch.autograd.Function):
                                 ctx.counts_arr_fn
                                 ], device=device)
 
-
+        print(ctx.counts_arr_fp)
+        print(ctx.counts_arr_fn)
 
         # return (wp.to_torch(ctx.counts_arr_fp),
         #         wp.to_torch(ctx.counts_arr_fn))
@@ -161,3 +153,64 @@ class getHausdorff(torch.autograd.Function):
                 wp.to_torch(ctx.tape.gradients[ctx.segmIndicies]),
                 wp.to_torch(ctx.tape.gradients[ctx.counts_arr_fn])
                  ,None,None,None,None,None,None, None, None)
+
+
+
+
+
+
+
+class getHausdorff_single_pass(torch.autograd.Function):
+    """
+    based on example from https://github.com/NVIDIA/warp/blob/main/examples/example_sim_fk_grad_torch.py
+    """
+
+
+
+    @staticmethod
+    def forward(ctx
+    ,counts,shorterIndicies,fullIndicies,
+    radius,device,dim_x,dim_y,dim_z,num_shorter_indicies
+    ):
+        ctx.tape = wp.Tape()
+        ctx.shorterIndicies=wp.from_torch( shorterIndicies, dtype=wp.vec3)
+        ctx.fullIndicies=wp.from_torch( fullIndicies, dtype=wp.vec3)
+        ctx.counts=wp.from_torch(counts , dtype=wp.types.float32)
+        wp.synchronize()
+        grid = wp.HashGrid(dim_x, dim_y, dim_z, device)
+        grid.build(ctx.goldIndicies, radius)
+        wp.synchronize()
+        with ctx.tape:
+            wp.launch(kernel=count_neighbors, dim=  num_shorter_indicies, inputs=[grid.id
+                    ,radius,
+                    ctx.fpIndicies,
+                    ctx.goldIndicies,
+                    ctx.counts_arr_fp
+                    ], device=device)
+        print(ctx.counts)
+
+        # return (wp.to_torch(ctx.counts_arr_fp),
+        #         wp.to_torch(ctx.counts_arr_fn))
+
+
+
+    @staticmethod
+    def backward(ctx,counts,shorterIndicies,fullIndicies,
+    radius,device,dim_x,dim_y,dim_z,num_shorter_indicies):
+
+        # map incoming Torch grads to our output variables
+        ctx.counts=wp.from_torch( counts, dtype=wp.vec3)
+        ctx.shorterIndicies=wp.from_torch( shorterIndicies, dtype=wp.vec3)
+        ctx.fullIndicies=wp.from_torch(fullIndicies , dtype=wp.types.float32)
+        ctx.tape.backward()
+
+        # return adjoint w.r.t. inputs
+        return (wp.to_torch(ctx.tape.gradients[ctx.counts]), 
+                wp.to_torch(ctx.tape.gradients[ctx.shorterIndicies]),
+                wp.to_torch(ctx.tape.gradients[ctx.fullIndicies]),
+                 ,None,None,None,None,None,None)
+
+
+
+
+                 
