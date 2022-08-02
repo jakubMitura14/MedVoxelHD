@@ -79,7 +79,6 @@ RUN pip install warp-lang==0.3.1
 RUN pip install pytorch-lightning
 RUN pip install numba
 RUN pip install cupy
-RUN pip install cuml
 
 
 RUN git clone https://github.com/jakubMitura14/HausMorphoCode.git /home/data/hausDorffCode
