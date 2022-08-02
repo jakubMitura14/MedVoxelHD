@@ -50,7 +50,7 @@ RUN apt-get -y install cuda-11.3
 RUN adduser --disabled-password --gecos '' --shell /bin/bash user \
  && chown -R user:user /app
 RUN echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-user
-USER user
+#USER user
 
 # All users can use /home/user as their home directory
 ENV HOME=/home/user
@@ -92,7 +92,7 @@ USER user
 
 RUN brew install enzyme
 
-USER root
+#USER root
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl ca-certificates gnupg2 less sudo \
