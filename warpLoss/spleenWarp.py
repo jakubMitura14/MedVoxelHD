@@ -37,7 +37,6 @@ import tempfile
 import shutil
 import os
 import glob
-import mainWarpLoss
 import warp as wp
 import statistics
 
@@ -45,44 +44,66 @@ import statistics
 wp.init()
 devicesWarp = wp.get_devices()
 print_config()
+import softWarpLoss
 
 data_dir = '/workspaces/Hausdorff_morphological/spleenData/Task09_Spleen/Task09_Spleen/Task09_Spleen'
 root_dir='/workspaces/Hausdorff_morphological/spleenData'
 
 
-def mainPartWarpLoss(index,a,bList,radius):
-    # a=a[1,:,:,:]
-    # b=bList[index][0,:,:,:]
-    argss= mainWarpLoss.prepare_tensors_for_warp_loss(a[1,:,:,:], bList[index][0,:,:,:],radius,devicesWarp[1])
-    mainWarpLoss.getHausdorff.apply(*argss)
-    # print(argss[0])
-    # print(argss[1])
-    return torch.stack([torch.mean(argss[0]),torch.mean(argss[1])])
+# def mainPartWarpLoss(index,a,bList,radius):
+#     # a=a[1,:,:,:]
+#     # b=bList[index][0,:,:,:]
+#     argss= mainWarpLoss.prepare_tensors_for_warp_loss(a[1,:,:,:], bList[index][0,:,:,:],radius,devicesWarp[1])
+#     mainWarpLoss.getHausdorff.apply(*argss)
+#     # print(argss[0])
+#     # print(argss[1])
+#     return torch.stack([torch.mean(argss[0]),torch.mean(argss[1])])
 
-def meanWarpLoss(aList, bList):
-    radius = 500.0#TODO increase
-    # summ=torch.zeros(1, requires_grad=True).to('cuda')
-    # lenSum=torch.zeros(1, requires_grad=True).to('cuda')
-    return torch.mean(torch.stack(list(map(
-        lambda tupl: mainPartWarpLoss(tupl[0],tupl[1]
-                                        ,decollate_batch(bList.bool()),radius) 
-                                    ,enumerate(decollate_batch(aList.bool()))))))
+# def meanWarpLoss(aList, bList):
+#     radius = 500.0#TODO increase
+#     # summ=torch.zeros(1, requires_grad=True).to('cuda')
+#     # lenSum=torch.zeros(1, requires_grad=True).to('cuda')
+#     return torch.mean(torch.stack(list(map(
+#         lambda tupl: mainPartWarpLoss(tupl[0],tupl[1]
+#                                         ,decollate_batch(bList.bool()),radius) 
+#                                     ,enumerate(decollate_batch(aList.bool()))))))
   
-    #print(f"waarp loss  {torch.nanmean(catRes)}")
+#     #print(f"waarp loss  {torch.nanmean(catRes)}")
 
-    #return torch.nanmean(catRes).to('cuda')
+#     #return torch.nanmean(catRes).to('cuda')
 
-def mainPartWarpLossSingleBatch(a,b):
-    radius=300.0
-    # a=a[1,:,:,:]
-    # b=bList[index][0,:,:,:]
-    argss= mainWarpLoss.prepare_tensors_for_warp_loss(a[0,1,:,:,:].bool(), b[0,0,:,:,:].bool(),radius,devicesWarp[1])
-    mainWarpLoss.getHausdorff.apply(*argss)
-    # print(argss[0])
-    # print(argss[1])
-    return torch.mean(torch.stack([torch.mean(argss[0]),torch.mean(argss[1])]))
+# def mainPartWarpLossSingleBatch(a,b):
+#     radius=300.0
+#     # a=a[1,:,:,:]
+#     # b=bList[index][0,:,:,:]
+#     argss= mainWarpLoss.prepare_tensors_for_warp_loss(a[0,1,:,:,:].bool(), b[0,0,:,:,:].bool(),radius,devicesWarp[1])
+#     mainWarpLoss.getHausdorff.apply(*argss)
+#     # print(argss[0])
+#     # print(argss[1])
+#     return torch.mean(torch.stack([torch.mean(argss[0]),torch.mean(argss[1])]))
 
 
+
+
+
+def mainPartWarpLossSingleBatch(b,a):
+    radius = 500.0#TODO increase
+    #b= b.float()
+    a=a[0,0,:,:,:].bool()
+    b=b[0,1,:,:,:]
+    #print(devicesWarp)
+
+    # argss= prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
+    # ress=
+
+    points_in_grid, points_labelArr,  y_hat, counts_arr ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false= softWarpLoss.prepare_tensors_for_warp_loss(a, b,radius, wp.get_devices()[1])
+    softWarpLoss.getHausdorff_soft.apply(points_in_grid, points_labelArr,  y_hat, counts_arr ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false)
+    res= torch.sub(torch.nanmean(counts_arr)
+                ,torch.div(torch.nansum(y_hat[a.bool()])  , (num_points_gold/((dim_x+dim_y+dim_z)/20) ) ))       
+    # argss= warpLoss.softWarpLoss.prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
+    # warpLoss.softWarpLoss.getHausdorff_soft.apply(*argss)
+    print(f"waarp loss  {res}")
+    return res
 
 
 class Net(pytorch_lightning.LightningModule):
@@ -213,11 +234,11 @@ class Net(pytorch_lightning.LightningModule):
     def training_step(self, batch, batch_idx):
         images, labels = batch["image"], batch["label"]
         output = self.forward(images)
-        print("in training")
+        #print("in training")
         # print(output.shape)
         # print(labels.shape)
         loss = mainPartWarpLossSingleBatch(output,labels)
-        print(loss)
+        #print(loss.item())
         #loss = self.loss_function(output, labels)
         tensorboard_logs = {"train_loss": loss.item()}
         return {"loss": loss, "log": tensorboard_logs}
@@ -228,11 +249,11 @@ class Net(pytorch_lightning.LightningModule):
         sw_batch_size = 1
         outputs = sliding_window_inference(
             images, roi_size, sw_batch_size, self.forward)
-        print("in validation")
+        #print("in validation")
         # print(outputs.shape)
         # print(labels.shape)
         loss = mainPartWarpLossSingleBatch(outputs,labels)
-        print(loss)
+        #print(loss)
         # loss = meanWarpLoss(decollate_batch(outputs.bool()),decollate_batch(labels.bool()))
 
         #print(decollate_batch(outputs)[0][1,:,:,:].shape)
@@ -246,7 +267,7 @@ class Net(pytorch_lightning.LightningModule):
     def validation_epoch_end(self, outputs):
         val_loss, num_items = 0, 0
         for output in outputs:
-            val_loss += output["val_loss"].sum().item()
+            val_loss += output["val_loss"].nansum().item()
             num_items += output["val_number"]
         mean_val_dice = self.dice_metric.aggregate().item()
         self.dice_metric.reset()
@@ -278,7 +299,7 @@ tb_logger = pytorch_lightning.loggers.TensorBoardLogger(
 # initialise Lightning's trainer.
 trainer = pytorch_lightning.Trainer(
     gpus=[0],
-    max_epochs=3,#600
+    max_epochs=600,#600
     logger=tb_logger,
     enable_checkpointing=True,
     num_sanity_val_steps=1,

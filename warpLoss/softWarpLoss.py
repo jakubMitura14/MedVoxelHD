@@ -30,7 +30,7 @@ def prepare_tensors_for_warp_loss(y_true, y_hat,radius,device):
 #                     y_hat_arr : wp.array(dtype=float)
     num_points_gold = torch.sum(y_true).item()
     num_points_gold_false= torch.numel(y_true) - num_points_gold
-    print(f"num_points_gold {num_points_gold} num_points_gold_false {num_points_gold_false}   ")
+    #print(f"num_points_gold {num_points_gold} num_points_gold_false {num_points_gold_false}   ")
 
     points_in_grid=torch.argwhere(torch.logical_not(y_true)).type(torch.float32).contiguous().to('cuda')
     points_labelArr=torch.argwhere(y_true).type(torch.float32).contiguous().to('cuda')
@@ -38,7 +38,9 @@ def prepare_tensors_for_warp_loss(y_true, y_hat,radius,device):
     counts_arr = torch.zeros(num_points_gold_false, dtype=torch.float32, requires_grad=True).to('cuda') 
 
 
-    return (points_in_grid, points_labelArr, y_hat, counts_arr
+    # return (points_in_grid, points_labelArr,  y_hat, counts_arr
+    # ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false)
+    return (points_in_grid, points_labelArr,  torch.sigmoid(y_hat), counts_arr
     ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false)
 
 
@@ -60,6 +62,7 @@ class getHausdorff_soft(torch.autograd.Function):
         ctx.counts_arr=wp.from_torch(counts_arr , dtype=wp.types.float32)
 
 
+
         wp.synchronize()
 
         print(device)
@@ -76,7 +79,8 @@ class getHausdorff_soft(torch.autograd.Function):
                                                                             ctx.points_labelArr,
                                                                             ctx.counts_arr,
                                                                             ctx.y_hat
-                                                                            ,num_points_gold], device = device)
+                                                                            ,num_points_gold
+                                                                            ,(dim_x+dim_y+dim_z)/40], device = device)#(dim_x+dim_y+dim_z)/10
 
 
         # return (wp.to_torch(ctx.counts_arr_fp),
@@ -113,7 +117,9 @@ def count_neighbors(grid : wp.uint64,
                     points_labelArr: wp.array(dtype=wp.vec3),
                     counts: wp.array(dtype=float),
                     y_hat_arr : wp.array(dtype=float,ndim=3),
-                    points_labelArr_len: wp.types.int32
+                    points_labelArr_len: wp.types.int32,
+                    max_dist: float
+
                     ):
     """
     grid- the data structure with set of points
@@ -122,6 +128,7 @@ def count_neighbors(grid : wp.uint64,
     points_labelArr_len - length of points_labelArr_len
     y_hat_arr - array with algorithm output
     counts - array for storing output
+    max_dist - maximuym expected distance - used to scale down the values
     """
     # tid = wp.tid()
     # # order threads by cell
@@ -139,7 +146,7 @@ def count_neighbors(grid : wp.uint64,
         point_label=points_labelArr[point_label_ind]
         # compute distance to point
         d = wp.length(p - point_label)
-        if(dist>d):
+        if((dist) >d):
             dist=d
             weight= y_hat_arr[int(p[0]),int(p[1]),int(p[2])]
         # if(i==0):
@@ -151,20 +158,6 @@ def count_neighbors(grid : wp.uint64,
         #     print("weeight ")
         #     print(y_hat_arr[int(p[0]),int(p[1]),int(p[2])])
 
-            # print(point_label[0])
-            # print(point_label[1])
-            # print(point_label[2])
-            # print(weight)
 
-    # if(weight>0 and i==1):
 
-    #     #print(str(f"*** {p[0]}"))
-    #     print(p[0])
-    #     print(p[1])
-    #     print(p[2])
-    #     print(weight)
-    #     # print("***")
-
-        # print(dist)        
-
-    counts[i] = dist*weight # TODO(scale down the distance)
+    counts[i] = (dist)*weight#*float(max_dist) # TODO(scale down the distance)

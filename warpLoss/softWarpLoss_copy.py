@@ -84,47 +84,53 @@ data_dir = "/workspaces/Hausdorff_morphological/CT_ORG"
 # dim_z = sizz[2]
 
 
-dim_x = 10
-dim_y = 10
-dim_z = 10
+dim_x = 400
+dim_y = 400
+dim_z = 400
 sizz= (dim_x,dim_y, dim_z )
-# labelBoolTensorA = torch.zeros(sizz,dtype=bool).contiguous().to('cuda') 
-# labelBoolTensorA[50:60,50:60,50:60]= torch.ones((10,10,10),dtype=bool).to('cuda')
-
-# labelBoolTensorBa= torch.zeros(sizz,dtype=float).float().to('cuda')
-# labelBoolTensorBa[40:60,40:60,40:60]= torch.ones((20,20,20),dtype=float).to('cuda')
-# torch.sum(labelBoolTensorBa)
-
-
-# labelBoolTensorBb= torch.zeros(sizz,dtype=float).float().to('cuda')
-# labelBoolTensorBb[40:60,40:60,40:60]= torch.mul(torch.ones((20,20,20),dtype=float),2).to('cuda')
-# torch.sum(labelBoolTensorBb)
-
-# labelBoolTensorBc= torch.zeros(sizz,dtype=float).float().to('cuda')
-# labelBoolTensorBc[40:80,40:80,40:80]= torch.mul(torch.ones((40,40,40),dtype=float),2).to('cuda')
-
-
 labelBoolTensorA = torch.zeros(sizz,dtype=bool).contiguous().to('cuda') 
-labelBoolTensorA[5:6,5:6,5:6]= torch.ones((1,1,1),dtype=bool).to('cuda')
+labelBoolTensorA[50:60,50:60,50:60]= torch.ones((10,10,10),dtype=bool).to('cuda')
+
+
+randdd= torch.rand((40,40,40),dtype=float).to('cuda')
 
 labelBoolTensorBa= torch.zeros(sizz,dtype=float).float().to('cuda')
-labelBoolTensorBa[4:6,4:6,4:6]= torch.ones((2,2,2),dtype=float).to('cuda')
+labelBoolTensorBa[40:60,40:60,40:60]= randdd[0:20,0:20,0:20]
 torch.sum(labelBoolTensorBa)
 
 
 labelBoolTensorBb= torch.zeros(sizz,dtype=float).float().to('cuda')
-labelBoolTensorBb[4:6,4:6,4:6]= torch.mul(torch.ones((2,2,2),dtype=float),2).to('cuda')
+labelBoolTensorBb[40:60,40:60,40:60]= torch.mul(randdd[0:20,0:20,0:20],2).to('cuda')
 torch.sum(labelBoolTensorBb)
 
 labelBoolTensorBc= torch.zeros(sizz,dtype=float).float().to('cuda')
-labelBoolTensorBc[3:7,3:7,3:7]= torch.mul(torch.ones((4,4,4),dtype=float),2).to('cuda')
+labelBoolTensorBc[40:80,40:80,40:80]= torch.mul(randdd,2).to('cuda')
+
+
+labelBoolTensorBd= torch.zeros(sizz,dtype=float).float().to('cuda')
+labelBoolTensorBd[20:60,20:60,20:60]= torch.mul(randdd,2).to('cuda')
 
 
 
-labelBoolTensorB =torch.rand( sizz, dtype=torch.float32, requires_grad=True).float().to('cuda')#[:,:,100:200,100:200,100:200].contiguous()
-#labelBoolTensorB =torch.where( dat['label']==jj, 1, 0).float().to(deviceTorch)#[:,:,100:200,100:200,100:200].contiguous()
 
-summB= torch.sum(labelBoolTensorB)
+# labelBoolTensorA = torch.zeros(sizz,dtype=bool).contiguous().to('cuda') 
+# labelBoolTensorA[5:6,5:6,5:6]= torch.ones((1,1,1),dtype=bool).to('cuda')
+
+# labelBoolTensorBa= torch.zeros(sizz,dtype=float).float().to('cuda')
+# labelBoolTensorBa[4:6,4:6,4:6]= torch.ones((2,2,2),dtype=float).to('cuda')
+# torch.sum(labelBoolTensorBa)
+
+
+# labelBoolTensorBb= torch.zeros(sizz,dtype=float).float().to('cuda')
+# labelBoolTensorBb[4:6,4:6,4:6]= torch.mul(torch.ones((2,2,2),dtype=float),2).to('cuda')
+# torch.sum(labelBoolTensorBb)
+
+# labelBoolTensorBc= torch.zeros(sizz,dtype=float).float().to('cuda')
+# labelBoolTensorBc[4:8,4:8,4:8]= torch.mul(torch.ones((4,4,4),dtype=float),2).to('cuda')
+
+# labelBoolTensorBd= torch.zeros(sizz,dtype=float).float().to('cuda')
+# labelBoolTensorBd[2:6,2:6,2:6]= torch.mul(torch.ones((4,4,4),dtype=float),2).to('cuda')
+
 
 
 
@@ -152,7 +158,7 @@ def prepare_tensors_for_warp_loss(y_true, y_hat,radius,device):
 #                     y_hat_arr : wp.array(dtype=float)
     num_points_gold = torch.sum(y_true).item()
     num_points_gold_false= torch.numel(y_true) - num_points_gold
-    print(f"num_points_gold {num_points_gold} num_points_gold_false {num_points_gold_false}   ")
+    #print(f"num_points_gold {num_points_gold} num_points_gold_false {num_points_gold_false}   ")
 
     points_in_grid=torch.argwhere(torch.logical_not(y_true)).type(torch.float32).contiguous().to('cuda')
     points_labelArr=torch.argwhere(y_true).type(torch.float32).contiguous().to('cuda')
@@ -160,6 +166,8 @@ def prepare_tensors_for_warp_loss(y_true, y_hat,radius,device):
     counts_arr = torch.zeros(num_points_gold_false, dtype=torch.float32, requires_grad=True).to('cuda') 
 
 
+    # return (points_in_grid, points_labelArr,  y_hat, counts_arr
+    # ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false)
     return (points_in_grid, points_labelArr,  torch.sigmoid(y_hat), counts_arr
     ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false)
 
@@ -182,6 +190,7 @@ class getHausdorff_soft(torch.autograd.Function):
         ctx.counts_arr=wp.from_torch(counts_arr , dtype=wp.types.float32)
 
 
+
         wp.synchronize()
 
         print(device)
@@ -198,7 +207,8 @@ class getHausdorff_soft(torch.autograd.Function):
                                                                             ctx.points_labelArr,
                                                                             ctx.counts_arr,
                                                                             ctx.y_hat
-                                                                            ,num_points_gold], device = device)
+                                                                            ,num_points_gold
+                                                                            ,(dim_x+dim_y+dim_z)/40], device = device)#(dim_x+dim_y+dim_z)/10
 
 
         # return (wp.to_torch(ctx.counts_arr_fp),
@@ -236,7 +246,7 @@ def count_neighbors(grid : wp.uint64,
                     counts: wp.array(dtype=float),
                     y_hat_arr : wp.array(dtype=float,ndim=3),
                     points_labelArr_len: wp.types.int32,
-                    max_dist: wp.types.int32
+                    max_dist: float
 
                     ):
     """
@@ -264,8 +274,8 @@ def count_neighbors(grid : wp.uint64,
         point_label=points_labelArr[point_label_ind]
         # compute distance to point
         d = wp.length(p - point_label)
-        if((dist/max_dist) >d):
-            dist=d/max_dist
+        if((dist) >d):
+            dist=d
             weight= y_hat_arr[int(p[0]),int(p[1]),int(p[2])]
         # if(i==0):
         #     print(p[0])
@@ -276,23 +286,9 @@ def count_neighbors(grid : wp.uint64,
         #     print("weeight ")
         #     print(y_hat_arr[int(p[0]),int(p[1]),int(p[2])])
 
-            # print(point_label[0])
-            # print(point_label[1])
-            # print(point_label[2])
-            # print(weight)
 
-    # if(weight>0 and i==1):
 
-    #     #print(str(f"*** {p[0]}"))
-    #     print(p[0])
-    #     print(p[1])
-    #     print(p[2])
-    #     print(weight)
-    #     # print("***")
-
-        # print(dist)        
-
-    counts[i] = dist*weight # TODO(scale down the distance)
+    counts[i] = (dist)*weight#*float(max_dist) # TODO(scale down the distance)
 
 
 
@@ -301,9 +297,20 @@ print(wp.get_devices())
 
 
 def getSumHaus(labelBoolTensorA, labelBoolTensorB):
-    argss= prepare_tensors_for_warp_loss(labelBoolTensorA,labelBoolTensorB,radius, wp.get_devices()[1])
-    getHausdorff_soft.apply(*argss)
-    print(torch.sum(argss[3]))
+    radius=500.0
+    points_in_grid, points_labelArr,  y_hat, counts_arr ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false= prepare_tensors_for_warp_loss(labelBoolTensorA,labelBoolTensorB,radius, wp.get_devices()[1])
+    getHausdorff_soft.apply(points_in_grid, points_labelArr,  y_hat, counts_arr ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false)
+    res= torch.sub(torch.mean(counts_arr)
+                ,torch.div(torch.sum(y_hat[labelBoolTensorA])  , (num_points_gold/((dim_x+dim_y+dim_z)/10) ) ))
+    #res= torch.mean(counts_arr)
+    #print(torch.div(torch.sum(y_hat[labelBoolTensorA]),num_points_gold))
+    #torch.div(torch.sum(y_hat[labelBoolTensorA]),num_points_gold))
+    # print(torch.sum(argss[3]))
+    print(res)
+
+# points_in_grid, points_labelArr,  torch.sigmoid(y_hat), counts_arr
+#     ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false
+
 
 print("labelBoolTensorBa")
 getSumHaus(labelBoolTensorA,labelBoolTensorBa )
@@ -313,3 +320,8 @@ getSumHaus(labelBoolTensorA,labelBoolTensorBb )
 print("labelBoolTensorBc")
 
 getSumHaus(labelBoolTensorA,labelBoolTensorBc )    
+print("labelBoolTensorBd")
+
+getSumHaus(labelBoolTensorA,labelBoolTensorBd )    
+
+labelBoolTensorBd

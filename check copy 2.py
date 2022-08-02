@@ -48,7 +48,7 @@ import warpLoss.softWarpLoss
 ## Additionally result from benchmark will be saved to csv file in provided path by csvPath
 ##
 
-csvPath = "/workspaces/Hausdorff_morphological/csvResC.csv"
+csvPath = "/workspaces/Hausdorff_morphological/csvResD.csv"
 data_dir = "/workspaces/Hausdorff_morphological/CT_ORG"
 
 from torch.utils.cpp_extension import load
@@ -92,7 +92,7 @@ def mymedianHd(a, b,  WIDTH,  HEIGHT,  DEPTH):
     return torch.mean(lltm_cuda.getHausdorffDistance_FullResList(a[0,0,:,:,:], b[0,0,:,:,:],  WIDTH,  HEIGHT,  DEPTH,1.0, torch.ones(1, dtype =bool) ).type(torch.FloatTensor)  ).item()
 
 def meanWarpLoss(a, b,  WIDTH,  HEIGHT,  DEPTH):
-    radius = 100.0#TODO increase
+    radius = 500.0#TODO increase
     b= b.float()
     a=a[0,0,:,:,:]
     b=b[0,0,:,:,:]
@@ -100,10 +100,15 @@ def meanWarpLoss(a, b,  WIDTH,  HEIGHT,  DEPTH):
 
     # argss= prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
     # ress=
-    argss= warpLoss.softWarpLoss.prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
-    warpLoss.softWarpLoss.getHausdorff_soft.apply(*argss)
-    print(f"waarp loss  {torch.mean(argss[3])}")
-    return torch.mean(argss[3]).item()
+
+    points_in_grid, points_labelArr,  y_hat, counts_arr ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false= warpLoss.softWarpLoss.prepare_tensors_for_warp_loss(a,b,radius, wp.get_devices()[1])
+    warpLoss.softWarpLoss.getHausdorff_soft.apply(points_in_grid, points_labelArr,  y_hat, counts_arr ,radius,device,dim_x,dim_y,dim_z,num_points_gold, num_points_gold_false)
+    res= torch.sub(torch.mean(counts_arr)
+                ,torch.div(torch.sum(y_hat[a])  , (num_points_gold/((dim_x+dim_y+dim_z)/10) ) ))       
+    # argss= warpLoss.softWarpLoss.prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
+    # warpLoss.softWarpLoss.getHausdorff_soft.apply(*argss)
+    print(f"waarp loss  {res}")
+    return res.item()
     
 
 
@@ -128,7 +133,7 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
                             numberOfRuns=1#the bigger the more reliable are benchmarks but also slower
                             #get benchmark times
 
-                            warpLosss=pytorchBench(labelBoolTensorA, labelBoolTensorB,"meanWarpLoss",numberOfRuns,   sizz[2], sizz[3],sizz[4])
+                            #warpLosss=pytorchBench(labelBoolTensorA, labelBoolTensorB,"meanWarpLoss",numberOfRuns,   sizz[2], sizz[3],sizz[4])
 
                             hdToTestRobustTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"hdToTestRobust",numberOfRuns,   sizz[2], sizz[3],sizz[4])
                             hdToTestTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"hdToTest", numberOfRuns,  sizz[2], sizz[3],sizz[4])
@@ -139,7 +144,7 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
                             # mymedianHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"mymedianHd", numberOfRuns,  sizz[2], sizz[3],sizz[4])
                             # olivieraTime = olivieraTuple[1]
                             #get values from the functions
-                            warpLosssVal=meanWarpLoss(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4]).detach().cpu()
+                            warpLosssVal=meanWarpLoss(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])#.detach().cpu()
 
 
                             hdToTestRobustValue= hdToTestRobust(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
@@ -151,8 +156,8 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
                             # mymeanHdValue= mymedianHd(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
                             #olivieraValue= olivieraTuple[0]
                             #constructing row for panda data frame
-                            series = {'warpLossTime' :warpLosss
-                                        ,'warpLossValue' :warpLosssVal
+                            series = {#'warpLossTime' :warpLosss,
+                                        'warpLossValue' :warpLosssVal
                                         ,'hdToTestRobustTime': hdToTestRobustTime
                                     ,'hdToTestTime': hdToTestTime
                                     ,'avSurfDistToTestTime':avSurfDistToTestTime
