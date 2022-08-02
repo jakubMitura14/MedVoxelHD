@@ -46,8 +46,8 @@ devicesWarp = wp.get_devices()
 print_config()
 import softWarpLoss
 
-data_dir = '/workspaces/Hausdorff_morphological/spleenData/Task09_Spleen/Task09_Spleen/Task09_Spleen'
-root_dir='/workspaces/Hausdorff_morphological/spleenData'
+data_dir = '/home/data/spleenDat/Task09_Spleen'
+root_dir='/home/data/spleenDat/Task09_Spleen'
 
 
 # def mainPartWarpLoss(index,a,bList,radius):
