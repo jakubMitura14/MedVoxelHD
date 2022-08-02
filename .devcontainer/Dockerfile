@@ -76,6 +76,7 @@ RUN pip install itk
 RUN pip install monai
 RUN pip install gspread
 RUN pip install warp-lang==0.3.1
+RUN pip install pytorch-lightning
 
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
 USER root
@@ -90,7 +91,7 @@ USER user
 # RUN export PATH=$HOME/.linuxbrew/bin:$PATH
 
 
-RUN brew install enzyme
+#RUN brew install enzyme
 
 #USER root
 
@@ -115,8 +116,8 @@ RUN apt-get update \
 # RUN mkdir ${HOME}/build_dir inst; cd ${HOME}/build_dir
 # RUN cmake ${HOME}/clad -DClang_DIR=/usr/lib/llvm-11 -DLLVM_DIR=/usr/lib/llvm-11 -DCMAKE_INSTALL_PREFIX=../inst -DLLVM_EXTERNAL_LIT="``which lit``"
 # RUN make && make install
-RUN conda install -c conda-forge clad
-RUN pip install pip install pytorch-lightning
+# RUN conda install -c conda-forge clad
+# RUN pip install pytorch-lightning
 
 USER user
 
