@@ -30,13 +30,13 @@ from monai.transforms import (AsDiscrete, AsDiscreted, Compose,
                               Resized, ScaleIntensityRanged, Spacingd)
 from monai.utils import first, set_determinism
 from torch.utils import benchmark
-import warp as wp
+# import warp as wp
 
 
 
-wp.init()
-devicesWarp = wp.get_devices()
-import warpLoss.mainWarpLoss
+# wp.init()
+# devicesWarp = wp.get_devices()
+# import warpLoss.mainWarpLoss
 
 
 
@@ -48,8 +48,8 @@ import warpLoss.mainWarpLoss
 ## Additionally result from benchmark will be saved to csv file in provided path by csvPath
 ##
 
-csvPath = "/workspaces/Hausdorff_morphological/csvResC.csv"
-data_dir = "/workspaces/Hausdorff_morphological/CT_ORG"
+csvPath = "/workspaces/Hausdorff_morphological/csvResD.csv"
+data_dir = "/data/OrganSegmentations"
 
 from torch.utils.cpp_extension import load
 
@@ -91,22 +91,22 @@ def myHd(a, b,  WIDTH,  HEIGHT,  DEPTH):
 def mymedianHd(a, b,  WIDTH,  HEIGHT,  DEPTH):
     return torch.mean(lltm_cuda.getHausdorffDistance_FullResList(a[0,0,:,:,:], b[0,0,:,:,:],  WIDTH,  HEIGHT,  DEPTH,1.0, torch.ones(1, dtype =bool) ).type(torch.FloatTensor)  ).item()
 
-def meanWarpLoss(a, b,  WIDTH,  HEIGHT,  DEPTH):
-    import warpLoss.mainWarpLoss
-    radius = 500.0#TODO increase
-    a=a[0,0,:,:,:]
-    b=b[0,0,:,:,:]
-    #print(devicesWarp)
+# def meanWarpLoss(a, b,  WIDTH,  HEIGHT,  DEPTH):
+#     import warpLoss.mainWarpLoss
+#     radius = 500.0#TODO increase
+#     a=a[0,0,:,:,:]
+#     b=b[0,0,:,:,:]
+#     #print(devicesWarp)
 
-    # argss= prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
-    # ress=getHausdorff.apply(*argss)
-    argss= warpLoss.mainWarpLoss.prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
-    ress=warpLoss.mainWarpLoss.getHausdorff.apply(*argss)
-    sumA=torch.sum(ress[0]).item()
-    sumB=torch.sum(ress[1]).item()
-    lenSum=torch.numel(argss[0])+torch.numel(ress[1])
-    print(f"waarp loss  {(sumA+sumB)/lenSum}")
-    return (sumA+sumB)/lenSum
+#     # argss= prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
+#     # ress=getHausdorff.apply(*argss)
+#     argss= warpLoss.mainWarpLoss.prepare_tensors_for_warp_loss(a, b,radius,devicesWarp[1])
+#     ress=warpLoss.mainWarpLoss.getHausdorff.apply(*argss)
+#     sumA=torch.sum(ress[0]).item()
+#     sumB=torch.sum(ress[1]).item()
+#     lenSum=torch.numel(argss[0])+torch.numel(ress[1])
+#     print(f"waarp loss  {(sumA+sumB)/lenSum}")
+#     return (sumA+sumB)/lenSum
     
 
 
@@ -131,43 +131,41 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
                             numberOfRuns=1#the bigger the more reliable are benchmarks but also slower
                             #get benchmark times
 
-                            warpLosss=pytorchBench(labelBoolTensorA, labelBoolTensorB,"meanWarpLoss",numberOfRuns,   sizz[2], sizz[3],sizz[4])
+                            # warpLosss=pytorchBench(labelBoolTensorA, labelBoolTensorB,"meanWarpLoss",numberOfRuns,   sizz[2], sizz[3],sizz[4])
 
                             hdToTestRobustTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"hdToTestRobust",numberOfRuns,   sizz[2], sizz[3],sizz[4])
                             hdToTestTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"hdToTest", numberOfRuns,  sizz[2], sizz[3],sizz[4])
                             avSurfDistToTestTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"avSurfDistToTest", numberOfRuns,  sizz[2], sizz[3],sizz[4])
 
-                            # myRobustHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"myRobustHd", numberOfRuns,  sizz[2], sizz[3],sizz[4])
-                            # myHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"myHd",  numberOfRuns, sizz[2], sizz[3],sizz[4])
-                            # mymedianHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"mymedianHd", numberOfRuns,  sizz[2], sizz[3],sizz[4])
+                            myRobustHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"myRobustHd", numberOfRuns,  sizz[2], sizz[3],sizz[4])
+                            myHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"myHd",  numberOfRuns, sizz[2], sizz[3],sizz[4])
+                            mymedianHdTime= pytorchBench(labelBoolTensorA, labelBoolTensorB,"mymedianHd", numberOfRuns,  sizz[2], sizz[3],sizz[4])
                             # olivieraTime = olivieraTuple[1]
                             #get values from the functions
-                            warpLosssVal=meanWarpLoss(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
+                            # warpLosssVal=meanWarpLoss(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
 
 
                             hdToTestRobustValue= hdToTestRobust(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
                             hdToTestValue= hdToTest(labelBoolTensorA, labelBoolTensorB, sizz[2], sizz[3],sizz[4])
                             avSurfDistToTestValue= avSurfDistToTest(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
 
-                            # myRobustHdValue= myRobustHd(labelBoolTensorA, labelBoolTensorB,  sizz[2], sizz[3],sizz[4])
-                            # myHdValue= myHd(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
-                            # mymeanHdValue= mymedianHd(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
+                            myRobustHdValue= myRobustHd(labelBoolTensorA, labelBoolTensorB,  sizz[2], sizz[3],sizz[4])
+                            myHdValue= myHd(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
+                            mymeanHdValue= mymedianHd(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
                             #olivieraValue= olivieraTuple[0]
                             #constructing row for panda data frame
-                            series = {'warpLossTime' :warpLosss
-                                        ,'warpLossValue' :warpLosssVal
-                                        ,'hdToTestRobustTime': hdToTestRobustTime
+                            series = {'hdToTestRobustTime': hdToTestRobustTime
                                     ,'hdToTestTime': hdToTestTime
                                     ,'avSurfDistToTestTime':avSurfDistToTestTime
-                                    #   ,'myRobustHdTime':myRobustHdTime
-                                    #   ,'myHdTime': myHdTime
-                                    #   ,'mymedianHdTime':mymedianHdTime
+                                      ,'myRobustHdTime':myRobustHdTime
+                                      ,'myHdTime': myHdTime
+                                      ,'mymedianHdTime':mymedianHdTime
                                     #   ,'olivieraTime': olivieraTime
                                     ,'hdToTestRobustValue': hdToTestRobustValue
                                     ,'hdToTestValue':hdToTestValue
-                                    #   ,'myRobustHdValue': myRobustHdValue
-                                    #   ,'myHdValue': myHdValue
-                                    #   ,'mymeanHdValue': mymeanHdValue
+                                      ,'myRobustHdValue': myRobustHdValue
+                                      ,'myHdValue': myHdValue
+                                      ,'mymeanHdValue': mymeanHdValue
                                     #   ,'olivieraValue': olivieraValue
                                     ,'avSurfDistToTestValue': avSurfDistToTestValue
                                     #   ,'myRobustHdTime': myRobustHdTime
@@ -187,7 +185,9 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
 def iterateOver(dat,df,noise,distortion ):
         print("**********************   \n  ")
         #making sure that we are dealing only with data with required metadata for spacing and orientation
-        if(dat["image_meta_dict"]["qform_code"]>0 and  dat["image_meta_dict"]["sform_code"]>0):
+        # print(f"ddddddddddd {dat}")
+        # if(dat["image_meta_dict"]["qform_code"]>0 and  dat["image_meta_dict"]["sform_code"]>0):
+        if(True):
 
             # we iterate over all masks and look for pairs of diffrent masks to compare
             for ii in range(1,7):
@@ -261,11 +261,11 @@ def benchmarkMitura():
     
 
     print("aaa 1 ")
-    train_images = sorted(
-        glob.glob(os.path.join(data_dir, "volumes", "*.nii.gz")))
+    images = sorted(
+        glob.glob(os.path.join(data_dir, "*.nii.gz")))
+    train_images= list(filter(lambda p : "volume" in p, images))
+    train_labels= list(filter(lambda p : "label" in p, images))
 
-    train_labels = sorted(
-        glob.glob(os.path.join(data_dir, "labels", "*.nii.gz")))
 
     data_dicts = [
         {"image": image_name, "label": label_name}
@@ -309,6 +309,9 @@ def benchmarkMitura():
             df=iterateOver(dat,df,1,0) 
     except:
         print("An exception occurred")
+    print("aaa 3")
+
+
 
 benchmarkMitura()
 

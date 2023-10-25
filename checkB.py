@@ -48,8 +48,8 @@ from torch.utils import benchmark
 ## Additionally result from benchmark will be saved to csv file in provided path by csvPath
 ##
 
-csvPath = "/workspaces/Hausdorff_morphological/csvResD.csv"
-data_dir = "/workspaces/Hausdorff_morphological/CT_ORG"
+csvPath = "/workspaces/Hausdorff_morphological/csvResE.csv"
+data_dir = "/home/Hausdorff_morphological/CT_ORG"
 
 from torch.utils.cpp_extension import load
 

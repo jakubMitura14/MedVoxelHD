@@ -2062,7 +2062,6 @@ TODO consider representing as a CUDA graph
 executing Algorithm as CUDA graph  based on official documentation and
 https://codingbyexample.com/2020/09/25/cuda-graph-usage/
 */
-#pragma once
 template <typename T>
 ForBoolKernelArgs<T> executeHausdoff(ForFullBoolPrepArgs<T>& fFArgs, const int WIDTH, const int HEIGHT, const int DEPTH, occupancyCalcData& occData,
     cudaStream_t stream, bool resToSave, float robustnessPercent, bool resIterNeeded, bool res3DNeeded) {
@@ -2254,11 +2253,12 @@ int getHausdorffDistance_CUDA(at::Tensor goldStandard,
     , const float robustnessPercent, at::Tensor numberToLookFor) {
 
     int res = 0;
+      //krowa
+      //      AT_PRIVATE_CASE_TYPE(NAME, at::ScalarType::Bool, bool, __VA_ARGS__)   \
 
-    AT_DISPATCH_ALL_TYPESWithBool(goldStandard.type(), "getHausdorffDistance_CUDA", ([&] {
-        res = getHausdorffDistance_CUDA_Generic<scalar_t>(goldStandard, algoOutput, WIDTH, HEIGHT, DEPTH, robustnessPercent, false, numberToLookFor, false);
 
-        }));
+        res = getHausdorffDistance_CUDA_Generic<bool>(goldStandard, algoOutput, WIDTH, HEIGHT, DEPTH, robustnessPercent, false, numberToLookFor, false);
+
     return res;
 }
 
@@ -2268,12 +2268,14 @@ at::Tensor getHausdorffDistance_CUDA_FullResList(at::Tensor goldStandard,
     , const int WIDTH, const  int HEIGHT, const  int DEPTH
     , const float robustnessPercent, at::Tensor numberToLookFor) {
 
-
     at::Tensor res;
-    AT_DISPATCH_ALL_TYPESWithBool(goldStandard.type(), "getHausdorffDistance_CUDA_FullResList", ([&] {
-        res = getHausdorffDistance_CUDA_FullResList_local<scalar_t>(goldStandard, algoOutput, WIDTH, HEIGHT, DEPTH, robustnessPercent, numberToLookFor);
 
-        }));
+    res = getHausdorffDistance_CUDA_FullResList_local<bool>(goldStandard, algoOutput, WIDTH, HEIGHT, DEPTH, robustnessPercent, numberToLookFor);
+
+    // AT_DISPATCH_ALL_TYPESWithBool(goldStandard.type(), "getHausdorffDistance_CUDA_FullResList", ([&] {
+    //     res = getHausdorffDistance_CUDA_FullResList_local<scalar_t>(goldStandard, algoOutput, WIDTH, HEIGHT, DEPTH, robustnessPercent, numberToLookFor);
+
+    //     }));
 
     return res;
 }
@@ -2438,10 +2440,12 @@ at::Tensor getHausdorffDistance_CUDA_3Dres(at::Tensor goldStandard,
 
 
     at::Tensor res;
-    AT_DISPATCH_ALL_TYPESWithBool(goldStandard.type(), "getHausdorffDistance_CUDA_3Dres_local", ([&] {
-        res = getHausdorffDistance_CUDA_3Dres_local<scalar_t>(goldStandard, algoOutput, WIDTH, HEIGHT, DEPTH, robustnessPercent, numberToLookFor);
+    res = getHausdorffDistance_CUDA_3Dres_local<bool>(goldStandard, algoOutput, WIDTH, HEIGHT, DEPTH, robustnessPercent, numberToLookFor);
 
-        }));
+    // AT_DISPATCH_ALL_TYPESWithBool(goldStandard.type(), "getHausdorffDistance_CUDA_3Dres_local", ([&] {
+    //     res = getHausdorffDistance_CUDA_3Dres_local<scalar_t>(goldStandard, algoOutput, WIDTH, HEIGHT, DEPTH, robustnessPercent, numberToLookFor);
+
+    //     }));
 
     return res;
 
@@ -2548,7 +2552,6 @@ at::Tensor getHausdorffDistance_CUDA_3Dres(at::Tensor goldStandard,
  
  #pragma once
  __device__ int finished; // global variable that contains a boolean which indicates when to stop the kernel processing
- #pragma once
  __constant__ __device__ int WIDTH, HEIGHT, DEPTH; // constant variables that contain the size of the volume
  
  #pragma once
