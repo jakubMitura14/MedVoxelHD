@@ -157,7 +157,7 @@ RUN python3 -m pip  --no-cache-dir install install --no-cache-dir \
     mock \
     portpicker \
     requests \
-    h5py== 3.10.0\
+    h5py==3.10.0\
     #itk \
     #SimpleITK>=2.1.1.2 \
     # pandas \
@@ -205,26 +205,13 @@ RUN python3 -m pip  --no-cache-dir install install --no-cache-dir \
 RUN python3 -m pip  --no-cache-dir install install --no-cache-dir gspread
 
 
+COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
+ENTRYPOINT [ "/docker-entrypoint.sh" ]
 # CMD ["sleep", "infinity" ,"sh", "-c", "./Slicer/bin/PythonSlicer -m jupyter notebook --port=$JUPYTERPORT --ip=0.0.0.0 --no-browser --NotebookApp.default_url=/lab/"]
-CMD ["sleep", "infinity"]
+# CMD ["sleep", "infinity"]
 ################################################################################
 # Install Slicer application startup script
 
 # COPY .slicerrc.py .
 
-
-################################################################################
-# Build-time metadata as defined at http://label-schema.org
-ARG BUILD_DATE
-ARG IMAGE
-ARG VCS_REF
-ARG VCS_URL
-
-# cd /workspaces/konwersjaJsonData/nnunet/nnunetv2pl/nnUNet
-# python3 -m pip  install -e .
-
-# cp /home/sliceruser/nnunetMainFolder/nnUNet_raw/Dataset294_Prostate/labelsTr/9002700.nii.gz /workspaces/konwersjaJsonData/explore/for_explore/9002700.nii.gz
-
-# docker build /home/jakubmitura/konwersjaJsonData/.devcontainer  -t aug_classic
-
-# docker run --init --gpus all --ipc host --privileged --net host -p 8888:8888 -p49053:49053 -v "/home/jakubmitura/nnunet":/home/sliceruser/nnunetMainFolder -v "/home/jakubmitura/konwersjaJsonData":/workspaces/konwersjaJsonData  aug_classic:latest

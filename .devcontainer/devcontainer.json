@@ -37,7 +37,6 @@
         "--ipc",
         "host",
         "--net",
-        "host",
         "--privileged",
         "-i"
         // "-e",
@@ -47,14 +46,14 @@
     ],
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
-        "ms-python.python"
-        // ,"julialang.language-julia"
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "ms-azuretools.vscode-docker"
         // "ms-python.vscode-pylance"
     ],
     "mounts": [
         "source=/media/jm/hddData/datasets/ct_org,target=/data,type=bind,consistency=cached"
-
-      ],
+    ],
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [],
     // Use 'postCreateCommand' to run commands after the container is created.
@@ -65,21 +64,7 @@
         "ghcr.io/devcontainers/features/git:1": {},
         // "ghcr.io/devcontainers/features/python:1": {},
         "ghcr.io/msclock/features/gitlab-ci-local:0": {}
-    }
-    // "postStartCommand": "/docker-entrypoint.sh"
+    },
+    "postStartCommand": "/docker-entrypoint.sh"
 }
-// https://cloud.google.com/compute/docs/disks/add-persistent-disk
-// sudo lsblk
-// sudo mkdir -p /mnt/disks/nvme0n2
-// sudo mount -o discard,defaults /dev/nvme0n2 /mnt/disks/nvme0n2
-// sudo chmod a+w /mnt/disks/nvme0n2
-// sudo blkid /dev/nvme0n2
-// sudo nano /etc/fstab
-// Now we have open file and add
-// UUID=60472865-f6b4-47a3-98d1-f4189e8740c9 /mnt/disks/nvme0n2 ext4 discard,defaults,defaults 0 2
-// sudo chown jakubmitura /mnt/disks/nvme0n2
-// sudo chmod u=rwx /mnt/disks/nvme0n2
-// /dev/nvme0n2: UUID="60472865-f6b4-47a3-98d1-f4189e8740c9" TYPE="ext4"
-// /home/sliceruser/workspaces/workspaces/konwersjaJsonData/outCsv
-// git clone --branch cust --single-branch https://github.com/jakubMitura14/konwersjaJsonData.git
-// git pull --branch cust --single-branch https://github.com/jakubMitura14/konwersjaJsonData.git
+#docker run –init –gpus all –ipc host –net –privileged -i -v /media/jm/hddData/datasets/ct_org:/data --restart unless-stopped haus
