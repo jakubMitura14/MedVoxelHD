@@ -37,6 +37,7 @@
         "--ipc",
         "host",
         "--net",
+        "host",
         "--privileged",
         "-i"
         // "-e",
@@ -52,7 +53,7 @@
         // "ms-python.vscode-pylance"
     ],
     "mounts": [
-        "source=/media/jm/hddData/datasets/ct_org,target=/data,type=bind,consistency=cached"
+        "source=/media/jm/hddData1/datasets/ct_org,target=/data,type=bind,consistency=cached"
     ],
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [],
@@ -67,4 +68,4 @@
     },
     "postStartCommand": "/docker-entrypoint.sh"
 }
-#docker run –init –gpus all –ipc host –net –privileged -i -v /media/jm/hddData/datasets/ct_org:/data --restart unless-stopped haus
+// #docker run --init --gpus all --ipc host --net=host --privileged -it -v /media/jm/hddData/datasets/ct_org:/data --restart unless-stopped haus

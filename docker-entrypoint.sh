@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 
-
-python3 /workspaces/Hausdorff_morphological/benchmarking.py
+cd /home/sliceruser/code &&\
+python3 benchmarking.py
 
 
 # set -ex

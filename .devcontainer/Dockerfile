@@ -203,7 +203,8 @@ RUN python3 -m pip  --no-cache-dir install install --no-cache-dir \
 
 
 RUN python3 -m pip  --no-cache-dir install install --no-cache-dir gspread
-
+RUN mkdir ${HOME}/code
+RUN git clone https://github.com/jakubMitura14/Hausdorff_morphological.git ${HOME}/code
 
 COPY docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
