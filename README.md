@@ -16,5 +16,18 @@ First one need to build docker container. Easiest way to execute the code is to
  
 ## Usage
 
+In order to execute the code using Python and PyTorch the python file need to be able to localize the lltm_cuda.cpp and lltm_cuda_kernel.cu files. The easiest ways to achieve it is via locating the python file in the same directory as the 2 files mentioned.
+In the python file the extension needs to be first loaded. For example :
+```
+from torch.utils.cpp_extension import load
+lltm_cuda = load('lltm_cuda', ['lltm_cuda.cpp', 'lltm_cuda_kernel.cu'], verbose=True)
+```
+There are couple ways how to execute computations of the Hausdorff distance. The most basic one return just a single number. For example :
+```
+lltm_cuda.getHausdorffDistance(a[0,0,:,:,:], b[0,0,:,:,:],  WIDTH,  HEIGHT,  DEPTH,0.90, torch.ones(1, dtype =bool) )
+where first two entries are 3 dimensional boolean cuda pytorch tensors, that has the same shape.  WIDTH,  HEIGHT,  DEPTH Indicate the shape of a input tensor, next is the robustness percent 
+```
+
+
 
 ## Example
