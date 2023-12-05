@@ -33,3 +33,8 @@ Additionally we have two additional functions with the same arguments:
 
 ## Example
 Example and more detailed explanation of the algorithm is in the documentation
+
+## Acknowledgments
+Logo was created using generative machine learning model dall-e 3
+
+
