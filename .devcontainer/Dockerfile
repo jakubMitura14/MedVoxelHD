@@ -206,9 +206,9 @@ RUN python3 -m pip  --no-cache-dir install install --no-cache-dir gspread
 RUN mkdir ${HOME}/code
 RUN git clone https://github.com/jakubMitura14/Hausdorff_morphological.git ${HOME}/code
 
-COPY docker-entrypoint.sh /
-RUN chmod +x /docker-entrypoint.sh
-ENTRYPOINT [ "/docker-entrypoint.sh" ]
+# COPY docker-entrypoint.sh /
+# RUN chmod +x /docker-entrypoint.sh
+# ENTRYPOINT [ "/docker-entrypoint.sh" ]
 # CMD ["sleep", "infinity" ,"sh", "-c", "./Slicer/bin/PythonSlicer -m jupyter notebook --port=$JUPYTERPORT --ip=0.0.0.0 --no-browser --NotebookApp.default_url=/lab/"]
 # CMD ["sleep", "infinity"]
 ################################################################################

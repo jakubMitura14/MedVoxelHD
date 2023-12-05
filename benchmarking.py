@@ -44,6 +44,10 @@ import SimpleITK as sitk
 ##    data_dir should have two subdirectories labels and volumes in volumes only images should be present in labels only labels
 ## Additionally result from benchmark will be saved to csv file in provided path by csvPath
 ##
+#cp /workspaces/Hausdorff_morphological/mituratest-161fba324ffd.json /home/sliceruser/.config/gspread/service_account.json
+gc = gspread.service_account()
+sht = gc.open_by_url('https://docs.google.com/spreadsheets/d/16GQbXrP68OjmfOWwvjhOKp34WngIKolUFYsXCUVEvOk/edit#gid=0').worksheet("metrics")
+
 
 csvPath = "/workspaces/Hausdorff_morphological/csvResD.csv"
 data_dir = "/data/OrganSegmentations"
@@ -207,6 +211,9 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
             ,'noise' :noise
             ,'distortion':distortion
             ,'translations':translations }
+
+    sht.append_row([hdToTestRobustTime,hdToTestTime,avSurfDistToTestTime,myRobustHdTime,myHdTime,mymedianHdTime,olivieraTime,hdToTestRobustValue,hdToTestValue,myRobustHdValue,myHdValue, mymeanHdValue,olivieraValue,avSurfDistToTestValue,myRobustHdTime,hdToTestValue,sitk_average_value, sitk_hd_value,bench_sitk_time,sizz[2],sizz[3],sizz[4],noise,distortion,translations])
+
     df=df.append(series, ignore_index = True)
     # except:
     #     print("An exception occurred")
