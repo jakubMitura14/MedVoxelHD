@@ -1,4 +1,4 @@
-<h1> <img src="logo_hausdorff.jpeg" alt="MedVoxelHD" width="50"> MedVoxelHD </h1>
+<h1> <img src="logo_hausdorff.jpeg" alt="MedVoxelHD" width="150"> MedVoxelHD </h1>
 
 raw=true
 
