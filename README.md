@@ -1,5 +1,3 @@
-# MedVoxelHD
-
 <h1> <img src="logo_hausdorff.jpeg" alt="MedVoxelHD" width="50"> MedVoxelHD </h1>
 
 raw=true
