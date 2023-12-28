@@ -1,4 +1,4 @@
-<h1> <img src="logo_hausdorff.jpeg" alt="MedVoxelHD" width="60"> MedVoxelHD </h1>
+<img src="https://github.com/jakubMitura14/MedVoxelHD.git/master/logo_hausdorff.jpeg" style="display: block; margin: auto;" />
 
 CUDA c++ pytorch extension for mathemathical morphology based Hausdorff distance. Repository contain dockerfile, enviroment can be also created more conviniently with vscode remote development containers using files in this repository.
 
@@ -38,7 +38,28 @@ Additionally we have two additional functions with the same arguments:
 2) getHausdorffDistance_3Dres will return 3 dimensional array indicating what is the contribution of each voxel to the overall HD distance. It makes easy to visualize where areas that are most problematic in segmentation are present.
 
 ## Example
-Example and more detailed explanation of the algorithm is in the documentation
+The example of usage is presented in the jupyter notebook file that is present in this repository and is named case_analysis.ipynb. The file is showing how to compare the image of the gold standard liver segmentation to its dilatated version. This simulates comparison of gold standard with algorithm output.
+
+## Algorithm details
+
+
+To achieve the best performance, multiple optimizations are performed:
+    Dilatations and the memory load of the required data are performed concurrently using $cuda::pipeline$
+    Validations are performed only if the value of already-discovered results is lower than the total possible number of results (this information is stored in the metadata)
+    Utilization of the work queue led to increased occupation, as each thread block has an approximately equal number of data blocks to be processed---although not all data blocks must be analyzed in a given iteration
+    Data blocks are analyzed only when both $true$ and $false$ voxels are present in a given data block; only in these cases can dilatations lead to any change.  
+
+
+The most significant improvements were enabled by representing the vector of boolean values as bits in a 32-bit number. This led to:
+  A reduction in the required global memory relative to Boolean representation by a factor of eight
+  A reduction of up to 32 times the number of memory loads (one memory load of a 32-bit object instead of 32 loads of eight-bit Boolean)
+  The possibility of representing some required operations by bitwise operations
+  Dilatations and validation can be performed as bitwise operations
+  A reduction in the bandwidth required to fetch the data.
+
+
+
+
 
 ## Acknowledgments
 Logo was created using generative machine learning model dall-e 3
