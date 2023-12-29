@@ -1,4 +1,4 @@
-<img src="https://github.com/jakubMitura14/MedVoxelHD.git/master/logo_hausdorff.jpeg" style="display: block; margin: auto;" />
+<img src="https://github.com/jakubMitura14/MedVoxelHD/blob/master/logo_hausdorff.jpeg?raw=true" style="display: block; margin: auto;" />
 
 CUDA c++ pytorch extension for mathemathical morphology based Hausdorff distance. Repository contain dockerfile, enviroment can be also created more conviniently with vscode remote development containers using files in this repository.
 
@@ -43,10 +43,14 @@ The example of usage is presented in the jupyter notebook file that is present i
 
 
 To achieve the best performance, multiple optimizations are performed:
-    Dilatations and the memory load of the required data are performed concurrently using $cuda::pipeline$
-    Validations are performed only if the value of already-discovered results is lower than the total possible number of results (this information is stored in the metadata)
-    Utilization of the work queue led to increased occupation, as each thread block has an approximately equal number of data blocks to be processed---although not all data blocks must be analyzed in a given iteration
-    Data blocks are analyzed only when both $true$ and $false$ voxels are present in a given data block; only in these cases can dilatations lead to any change.  
+<ol>
+  <li> Dilatations and the memory load of the required data are performed concurrently using cuda::pipeline </li>
+  <li>Validations are performed only if the value of already-discovered results is lower than the total possible number of results (this information is stored in the metadata) </li>
+  <li> Utilization of the work queue led to increased occupation, as each thread block has an approximately equal number of data blocks to be processed although not all data blocks must be analyzed in a given iteration</li>
+  <li> Data blocks are analyzed only when both true and false voxels are present in a given data block; only in these cases can dilatations lead to any change.</li>
+</ol>
+
+    
 
 
 The most significant improvements were enabled by representing the vector of boolean values as bits in a 32-bit number. This led to:
