@@ -49,18 +49,16 @@ To achieve the best performance, multiple optimizations are performed:
   <li> Utilization of the work queue led to increased occupation, as each thread block has an approximately equal number of data blocks to be processed although not all data blocks must be analyzed in a given iteration</li>
   <li> Data blocks are analyzed only when both true and false voxels are present in a given data block; only in these cases can dilatations lead to any change.</li>
 </ol>
-
-    
-
-
+  
 The most significant improvements were enabled by representing the vector of boolean values as bits in a 32-bit number. This led to:
-  A reduction in the required global memory relative to Boolean representation by a factor of eight
-  A reduction of up to 32 times the number of memory loads (one memory load of a 32-bit object instead of 32 loads of eight-bit Boolean)
-  The possibility of representing some required operations by bitwise operations
-  Dilatations and validation can be performed as bitwise operations
-  A reduction in the bandwidth required to fetch the data.
+<ol>
 
-
+  <li>A reduction in the required global memory relative to Boolean representation by a factor of eight</li>
+  <li>A reduction of up to 32 times the number of memory loads (one memory load of a 32-bit object instead of 32 loads of eight-bit Boolean)</li>
+  <li>The possibility of representing some required operations by bitwise operations</li>
+  <li>Dilatations and validation can be performed as bitwise operations</li>
+  <li>A reduction in the bandwidth required to fetch the data.</li>
+</ol>
 
 
 
