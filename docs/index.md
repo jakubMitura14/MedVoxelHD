@@ -1,4 +1,4 @@
-<img src="https://github.com/jakubMitura14/MedVoxelHD/blob/master/logo_hausdorff.jpeg?raw=true" style="display: block; margin: auto;" width="500" />
+<img src="https://github.com/jakubMitura14/MedVoxelHD/blob/master/logo_hausdorff.jpeg?raw=true" style="display: block; margin: auto;" width="200" />
 
 CUDA c++ pytorch extension for mathemathical morphology based Hausdorff distance. Repository contain dockerfile, enviroment can be also created more conviniently with vscode remote development containers using files in this repository.
 
