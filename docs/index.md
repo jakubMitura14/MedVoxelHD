@@ -1,11 +1,9 @@
 <img src="https://github.com/jakubMitura14/MedVoxelHD/blob/master/logo_hausdorff.jpeg?raw=true" style="display: block; margin: auto;" width="200" />
 
-CUDA c++ pytorch extension for mathemathical morphology based Hausdorff distance. Repository contain dockerfile, enviroment can be also created more conviniently with vscode remote development containers using files in this repository.
+MedVoxelHD is CUDA C++ pytorch extension for mathemathical morphology based Hausdorff distance. Repository contain dockerfile, enviroment can be also created more conviniently with vscode remote development containers using files in this repository.
 
 ## Prerequisites
 In order to build docker container one need to have NVIDIA GPU hardware and NVIDIA Container Toolkit installed [link](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). As the dockerfile will download also sample data it is advised to have at least 30gb of space available on the disk.
-
-CUDA c++ pytorch extension for mathemathical morphology based Hausdorff distance. Repository contain dockerfile, enviroment can be also created more conviniently with vscode remote development containers using files in this repository.
 
 ## Installation
 First one need to build docker container. Easiest way to execute the code is to 
