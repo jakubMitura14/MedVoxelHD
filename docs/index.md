@@ -3,17 +3,20 @@
 MedVoxelHD is CUDA C++ pytorch extension for mathemathical morphology based Hausdorff distance. Repository contain dockerfile, enviroment can be also created more conviniently with vscode remote development containers using files in this repository.
 
 ## Prerequisites
-In order to build docker container one need to have NVIDIA GPU hardware and NVIDIA Container Toolkit installed [link](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). As the dockerfile will download also sample data it is advised to have at least 30gb of space available on the disk.
+In order to build docker container one need to have NVIDIA GPU hardware and NVIDIA Container Toolkit installed [link](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). As the example data needs also to be dowloaded and docker container e build it is advisable to have at least 30gb of space on the hard drive.
 
 ## Installation
 First one need to build docker container. Easiest way to execute the code is to 
 <ol>
-  <li>clone the repository</li>
-  <li>install NVIDIA Container Toolkit if not already done [link](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)</li>
-  <li>open the folder with repository using visual studio code</li>
-  <li>opeinstall remote development extension in vs code</li>
-  <li>click remote explorer next click plus at the top left and open in remote container</li>
-  <li>the rest of the configuration should happen automatically</li>
+<li>clone the repository</li>
+<li>download example dataset from [link](https://wiki.cancerimagingarchive.net/pages/viewpage.action?pageId=61080890) - only Images are needed </li>
+<li> install NVIDIA Container Toolkit if not already done [link](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) </li>
+<li>open the folder with repository using visual studio code </li>
+<li>edit devcontainer.json mount path /media/jm/hddData1/datasets/ct_org to the path where you downloaded the CT-ORG dataset  </li>
+<li>install remote development extension in vs code </li>
+<li>click remote explorer next click plus at the top left and open in remote container </li>
+<li>the rest of the configuration should happen automatically </li>
+
 </ol>
 
  
@@ -38,7 +41,8 @@ Additionally we have two additional functions with the same arguments:
 visualize where areas that are most problematic in segmentation are present.
 
 ## Example
-The example of usage is presented in the jupyter notebook file that is present in this repository and is named case_analysis.ipynb. The file is showing how to compare the image of the gold standard liver segmentation to its dilatated version. This simulates comparison of gold standard with algorithm output.
+The example of usage is presented in the jupyter notebook file that is present in this repository and is named case_analysis.ipynb. The file is showing how to compare the image of the gold standard liver segmentation to its dilatated version. This simulates comparison of gold standard with algorithm output. 
+Fully reproducible example with additional display of the histogram can be found on Code Ocean compute capsule [link](https://codeocean.com/capsule/1122829/tree)
 
 ## Algorithm details
 
