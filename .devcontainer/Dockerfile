@@ -216,3 +216,6 @@ RUN git clone https://github.com/jakubMitura14/Hausdorff_morphological.git ${HOM
 
 # COPY .slicerrc.py .
 
+#mkdir ~/.config/gspread
+
+#cp /workspaces/Hausdorff_morphological/mituratest-161fba324ffd.json ~/.config/gspread/service_account.json

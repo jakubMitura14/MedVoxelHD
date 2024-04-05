@@ -20,25 +20,18 @@
         "host",
         "--privileged",
         "-i"
-        // "-e",
-        // "DISPLAY=${env:DISPLAY}",
-        // "-v",
-        // "/tmp/.X11-unix:/tmp/.X11-unix"
     ],
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
         "ms-python.python",
         "ms-toolsai.jupyter",
         "ms-azuretools.vscode-docker"
-        // "ms-python.vscode-pylance"
     ],
     "mounts": [
-        "source=/media/jm/hddData1/datasets/ct_org,target=/data,type=bind,consistency=cached"
+        //  "source=/media/jm/hddData/datasets/ct_org,target=/data,type=bind,consistency=cached"
     ],
     "features": {
         "ghcr.io/devcontainers/features/git:1": {},
-        // "ghcr.io/devcontainers/features/python:1": {},
         "ghcr.io/msclock/features/gitlab-ci-local:0": {}
     }
-    // "postStartCommand": "/docker-entrypoint.sh"
 }

@@ -32,9 +32,7 @@ std::tuple<int, double>  benchmarkOlivieraCUDA(
 #define CHECK_CONTIGUOUS(x) AT_ASSERTM(x.is_contiguous(), #x " must be contiguous")
 #define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
 
-int getHausdorffDistance(
-    torch::Tensor goldStandard,
-    torch::Tensor algoOutput
+int getHausdorffDistance(torch::Tensor goldStandard, torch::Tensor algoOutput
     , const  int xDim, const int yDim, const int zDim
     , const float robustnessPercent
     , at::Tensor numberToLookFor) {

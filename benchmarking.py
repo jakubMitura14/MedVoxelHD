@@ -99,7 +99,13 @@ def bench_sitk(a, b,  WIDTH,  HEIGHT,  DEPTH):
     hausdorffcomputer=sitk.HausdorffDistanceImageFilter()
     hausdorffcomputer.Execute(sitk.GetImageFromArray(a.astype(float))>0.5, sitk.GetImageFromArray(b.astype(float))>0.5)
     sitk_average_value=hausdorffcomputer.GetAverageHausdorffDistance()
-# labelTrue>0.5,labelPred>0.5
+    return sitk_average_value #torch.mean(lltm_cuda.getHausdorffDistance_FullResList(a[0,0,:,:,:], b[0,0,:,:,:],  WIDTH,  HEIGHT,  DEPTH,1.0, torch.ones(1, dtype =bool) ).type(torch.FloatTensor)  ).item()
+
+
+def bench_sitk_classic(a, b,  WIDTH,  HEIGHT,  DEPTH):
+    hausdorffcomputer=sitk.HausdorffDistanceImageFilter()
+    hausdorffcomputer.Execute(sitk.GetImageFromArray(a.astype(float))>0.5, sitk.GetImageFromArray(b.astype(float))>0.5)
+    sitk_average_value=hausdorffcomputer.GetHausdorffDistance()
     return sitk_average_value #torch.mean(lltm_cuda.getHausdorffDistance_FullResList(a[0,0,:,:,:], b[0,0,:,:,:],  WIDTH,  HEIGHT,  DEPTH,1.0, torch.ones(1, dtype =bool) ).type(torch.FloatTensor)  ).item()
 
 
@@ -121,8 +127,7 @@ def pytorchBench(a,b,testNameStr, numberOfRuns,  WIDTH,  HEIGHT,  DEPTH):
 
 
 def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,translations ):
-    # try:
-    # if(labelBoolTensorA.numel()<30000000):                
+   
     #oliviera tuple return both result and benchamrking time
     olivieraTuple = lltm_cuda.benchmarkOlivieraCUDA(labelBoolTensorA, labelBoolTensorB,sizz[2], sizz[3],sizz[4])
     numberOfRuns=1#the bigger the more reliable are benchmarks but also slower
@@ -148,8 +153,6 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
     torch.cuda.empty_cache()
 
     olivieraTime = olivieraTuple[1]
-    #get values from the functions
-    # warpLosssVal=meanWarpLoss(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
 
     torch.cuda.empty_cache()
     hdToTestRobustValue= hdToTestRobust(labelBoolTensorA, labelBoolTensorB,   sizz[2], sizz[3],sizz[4])
@@ -181,6 +184,9 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
 
     bench_sitk_time= pytorchBench(labelBoolTensorA.detach().cpu().numpy()[0,0,:,:,:]
                                   , labelBoolTensorB.detach().cpu().numpy()[0,0,:,:,:],"bench_sitk", numberOfRuns,  sizz[2], sizz[3],sizz[4])
+    
+    bench_sitk_time_classic= pytorchBench(labelBoolTensorA.detach().cpu().numpy()[0,0,:,:,:]
+                                  , labelBoolTensorB.detach().cpu().numpy()[0,0,:,:,:],"bench_sitk_classic", numberOfRuns,  sizz[2], sizz[3],sizz[4])
 
 
     olivieraValue= olivieraTuple[0]
@@ -204,6 +210,7 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
             ,'sitk_average_value' :sitk_average_value
             ,'sitk_hd_value':sitk_hd_value
             ,'bench_sitk_time' :bench_sitk_time
+            ,'bench_sitk_time_classic' :bench_sitk_time_classic
             
             ,'WIDTH' :sizz[2]
             ,'HEIGHT':sizz[3]
@@ -212,11 +219,10 @@ def saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df, noise,distortion,t
             ,'distortion':distortion
             ,'translations':translations }
 
-    sht.append_row([hdToTestRobustTime,hdToTestTime,avSurfDistToTestTime,myRobustHdTime,myHdTime,mymedianHdTime,olivieraTime,hdToTestRobustValue,hdToTestValue,myRobustHdValue,myHdValue, mymeanHdValue,olivieraValue,avSurfDistToTestValue,myRobustHdTime,hdToTestValue,sitk_average_value, sitk_hd_value,bench_sitk_time,sizz[2],sizz[3],sizz[4],noise,distortion,translations])
+    sht.append_row([hdToTestRobustTime,hdToTestTime,avSurfDistToTestTime,myRobustHdTime,myHdTime,mymedianHdTime,olivieraTime,hdToTestRobustValue,hdToTestValue,myRobustHdValue,myHdValue, mymeanHdValue,olivieraValue,avSurfDistToTestValue,myRobustHdTime,hdToTestValue,sitk_average_value, sitk_hd_value,bench_sitk_time,bench_sitk_time_classic,sizz[2],sizz[3],sizz[4],noise,distortion,translations])
 
     df=df.append(series, ignore_index = True)
-    # except:
-    #     print("An exception occurred")
+
     return df
 
 
@@ -239,7 +245,6 @@ def append_to_np_arr(index,ii,jj,np_arr):
     """
     # create a 1D numpy array to check against
     check_arr = np.array([[index,ii,jj]])
-    print(f"np_arr {np_arr} check_arr {check_arr}")
     # check if any row of arr is equal to check_arr
     np_arr=np.append(np_arr,check_arr, axis=0)
     return np_arr
@@ -279,7 +284,6 @@ def iterateOver(dat,df,noise,distortion,index):
                     if(summA.item()>0 and summB.item()):
                         if((ii!=jj)>0):
                             dfb=saveBenchToCSV(labelBoolTensorA,labelBoolTensorB,sizz,df,noise,distortion,0 )
-                            # if dfb.size> df.size:
                             df=dfb
                             df.to_csv(csvPath)
                         else:#now adding translations in z direction
@@ -287,7 +291,6 @@ def iterateOver(dat,df,noise,distortion,index):
                                 translated=torch.zeros_like(labelBoolTensorA)
                                 translated[:,:,:,:,translationNumb:sizz[4]]= labelBoolTensorA[:,:,:,:,0:(sizz[4]-translationNumb)]
                                 dfb=saveBenchToCSV(labelBoolTensorA,translated,sizz,df,noise,distortion,translationNumb )
-                            #    if dfb.size> df.size:
                                 df=dfb
                                 df.to_csv(csvPath)
                 else:
@@ -302,49 +305,26 @@ def benchmarkMitura():
     and storing benchmark results in csv through pandas dataframe
     """
 
+    spac_x=1.0
+    spac_y=1.0
+    spac_z=1.0
 
     set_determinism(seed=0)
+
     val_transforms = Compose(
     [
         LoadImaged(keys=["image", "label"]),
         EnsureChannelFirstd(keys=["image", "label"]),
         Spacingd(keys=["image", "label"], pixdim=(
-            0.5,0.4,0.4), mode=("bilinear", "nearest")),
+             spac_x,spac_y,spac_z), mode=("bilinear", "nearest")),
         Orientationd(keys=["image", "label"], axcodes="RAS"),
-        ResizeWithPadOrCropd(spatial_size=(450,512,512),keys=["image", "label"]),
-        # CropForegroundd(keys=["image", "label"], source_key="image"),
-        EnsureTyped(keys=["image", "label"]),
-    ])
-    val_transformsWithNoise = Compose(
-    [
-        LoadImaged(keys=["image", "label"]),
-        EnsureChannelFirstd(keys=["image", "label"]),
-        Spacingd(keys=["image", "label"], pixdim=(
-             0.5,0.4,0.4), mode=("bilinear", "nearest")),
-        Orientationd(keys=["image", "label"], axcodes="RAS"),
-        # CropForegroundd(keys=["image", "label"], source_key="image"),
         EnsureTyped(keys=["image", "label"]),
         ResizeWithPadOrCropd(spatial_size=(450,512,512),keys=["image", "label"]),
 
         RandGaussianNoised(keys=["image", "label"], prob=1.0)
     ])
 
-    val_transformsWithRandomdeformations = Compose(
-    [
-        LoadImaged(keys=["image", "label"]),
-        EnsureChannelFirstd(keys=["image", "label"]),
-        Spacingd(keys=["image", "label"], pixdim=(
-             0.5,0.4,0.4), mode=("bilinear", "nearest")),
-        Orientationd(keys=["image", "label"], axcodes="RAS"),
-        # CropForegroundd(keys=["image", "label"], source_key="image"),
-        ResizeWithPadOrCropd(spatial_size=(450,512,512),keys=["image", "label"]),
 
-        EnsureTyped(keys=["image", "label"]),
-        RandAffined(keys=["image", "label"], prob=1.0)
-    ])
-    
-
-    print("aaa 1 ")
     images = sorted(
         glob.glob(os.path.join(data_dir, "*.nii.gz")))
     train_images= list(filter(lambda p : "volume" in p, images))
@@ -359,21 +339,11 @@ def benchmarkMitura():
     check_ds = Dataset(data=data_dicts, transform=val_transforms)
     check_loader = DataLoader(check_ds, batch_size=1)
 
-    check_dsWithNoise = Dataset(data=data_dicts, transform=val_transformsWithNoise)
-    check_loaderWithNoise = DataLoader(check_dsWithNoise, batch_size=1)
-
-    check_dsWithDistortions = Dataset(data=data_dicts, transform=val_transformsWithRandomdeformations)
-    check_loaderWithDistortions = DataLoader(check_dsWithDistortions, batch_size=1)
 
     index=0
 
     #pandas data frame to save results
     df = pd.DataFrame()
-    # df = pd.DataFrame( columns = ['noise','distortion','hdToTestRobustTime','hdToTestTime','avSurfDistToTestTime','myRobustHdTime','myHdTime'
-    #                               ,'mymedianHdTime','olivieraTime','hdToTestRobustValue','hdToTestValue '
-    #                               ,'myRobustHdValue','myHdValue','mymeanHdValue','olivieraValue'
-    #                               ,'avSurfDistToTestValue','WIDTH', 'HEIGHT', 'DEPTH'])
-    print("aaa 2 ")
 
     index=0
     for dat in check_loader:
@@ -385,30 +355,8 @@ def benchmarkMitura():
             df=iterateOver(dat,df,0,0)
     except:
         print("An exception occurred")   
-        
-    # try:
-    #     for dat in check_loaderWithDistortions: 
-    #         df=iterateOver(dat,df,0,1)
-    # except:
-    #     print("An exception occurred")
-    # try:
-    #     for dat in check_loaderWithNoise:
-    #         df=iterateOver(dat,df,1,0) 
-    # except:
-    #     print("An exception occurred")
-    # print("aaa 3")
 
 
 
 benchmarkMitura()
-
-
-# cuda0 = torch.device('cuda:0')
-# def my3dResult(a, b,  WIDTH,  HEIGHT,  DEPTH):
-#     arr= lltm_cuda.getHausdorffDistance_3Dres(a, b,  WIDTH,  HEIGHT,  DEPTH,1.0, torch.ones(1, dtype =bool).to(cuda0) ).cpu().detach().numpy()
-#     print(np.sum(arr))
-#     dset = f.create_dataset("3dResulttoLooki", data=arr)
-
-
-
 
